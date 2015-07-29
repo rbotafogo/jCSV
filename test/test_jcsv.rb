@@ -42,9 +42,21 @@ class CSVTest < Test::Unit::TestCase
 
     should "read a csv file" do
 
-      Jcsv.open("example.csv") do |row|
+      # Reads all rows in memory and return and array of arrays. Each line is stored in
+      # one array
+      p Jcsv.read("example.csv", row_sep: "\n")
 
+      # Processes each line.
+      Jcsv.foreach("example.csv", row_sep: "\n") do |row|
+        p row
       end
+
+      # field_size_limit limits the number of characters in a column to prevent out of
+      # memory errors
+      # Jcsv.foreach("example.csv", row_sep: "\n", field_size_limit: 3)
+      
+      # Lines that start with comment_char are treated as comment and discarted
+      p Jcsv.read("sleep.csv", row_sep: "\n", col_sep: ";", comment_char: "#")
       
     end
 
