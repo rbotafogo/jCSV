@@ -40,12 +40,23 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
-    should "read a csv file" do
+    should "parse a csv file the quick way" do
 
+      #Jcsv.processors(:customerNo => :not_null, :firstName => :not_null,
+      #                :lastName => :not_null) 
+        
       # Reads all rows in memory and return and array of arrays. Each line is stored in
       # one array
-      p Jcsv.read("example.csv", row_sep: "\n")
+      p Jcsv.read("customer.csv", headers: true, comment_starts: "#")
 
+      Jcsv.read("customer.csv", headers: true, comment_starts: "#") { |row| p row }
+
+      Jcsv.read("example.csv", comment_starts: "#") do |row|
+        p row
+      end
+      
+      # p Jcsv.read("customer.csv", type: :map)
+=begin
       # Processes each line.
       Jcsv.foreach("example.csv", row_sep: "\n") do |row|
         p row
@@ -54,13 +65,23 @@ class CSVTest < Test::Unit::TestCase
       # field_size_limit limits the number of characters in a column to prevent out of
       # memory errors
       # Jcsv.foreach("example.csv", row_sep: "\n", field_size_limit: 3)
-      
+
       # Lines that start with comment_char are treated as comment and discarted
       p Jcsv.read("sleep.csv", row_sep: "\n", col_sep: ";", comment_char: "#")
-      
+=end      
     end
 
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+=begin
+    should "parse a csv file the powerful way" do
+
+      parser = Jcsv.new("example.csv")
+      settings = parser.settings
       
+    end
+=end    
   end
 
 end

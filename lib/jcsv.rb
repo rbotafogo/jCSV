@@ -23,191 +23,129 @@
 
 require_relative '../config'
 
-module JavaIO
-  include_package "java.io"
-end
-
-##########################################################################################
+# Ignoring surrounding spaces if they're not within quotes
+# In accordance with RFC 4180, the default behaviour of Super CSV is to treat all spaces
+# as important, including spaces surrounding the text in a cell.
 #
-##########################################################################################
+# This means for reading, a cell with contents    surrounded by spaces    is read with
+# surrounding spaces preserved. And for writing, the same String is written with surrounding
+# spaces and no surrounding quotes (they're not required, as spaces are considered important).
+#
+# There are some scenarios where this restriction must be relaxed, in particular when the CSV
+# file you're working with assumes that surrounding spaces must be surrounded by quotes,
+# otherwise will be ignored. For this reason, Super CSV allows you to enable the
+# surrounding_spaces_need_quotes preference.
+#
+# With surrounding_spaces_need_quotes enabled, it means that for reading, a cell with contents
+# '    surrounded by spaces   ' would be read as 'surrounded by spaces' (surrounding spaces
+# are trimmed), unless the String has surrounding quotes, e.g. "   surrounded by spaces   ",
+# in which case the spaces are preserved. And for writing, any String containing surrounding
+# spaces will automatically be given surrounding quotes when written in order to preserve
+# the spaces.
+#
+# You can enable this behaviour by calling surrounding_spaces_need_quotes(true) on the Builder.
+# You can do this with your own custom preference, or customize an existing preference
+
+# Skipping comments
+# Although comments aren't part of RFC4180, some CSV files use them so it's useful to be able
+# to skip these lines (or even skip lines because they contain invalid data). You can use one
+# of the predefined comment matchers:
+#
+# CommentStartsWith - matches lines that start with a specified String
+# CommentMatches - matches lines that match a specified regular expression
+# Or if you like you can write your own by implementing the CommentMatcher interface.
 
 class Jcsv
-  include_package "com.univocity.parsers.csv"
+  include_package "java.io"
+  include_package "org.supercsv.cellprocessor"
+  include_package "org.supercsv.cellprocessor.constraint"
+  include_package "org.supercsv.io"
+  include_package "org.supercsv.cellprocessor.ift"
+  include_package "org.supercsv.prefs"
+  include_package "org.supercsv.comment"
 
-  class << self
-    attr_accessor :converters
-  end
-
-  Jcsv.converters = Hash.new
+  attr_reader :builder
   
   #---------------------------------------------------------------------------------------
   # read the whole file at once
+  # Accepts the following options:
+  # @param comment_starts: character at the beginning of the line that marks a comment
+  # @param comment_matches: delimiters that match a comment, needs to comment at the beginning and
+  # end of the comment, such as <!.*!>, comments everyting between <! and !>
+  # @param quote_char The quote character (used when a cell contains special characters,
+  # such as the delimiter char, a quote char, or spans multiple lines).
+  # @param col_sep the delimiter character (separates each cell in a row).
+  # @param surrounding_spaces_need_quotes Whether spaces surrounding a cell need quotes in
+  # order to be preserved. The default value is false (quotes aren't required). 
+  # @param ignore_empty_lines Whether empty lines (i.e. containing only end of line symbols)
+  # are ignored. The default value is true (empty lines are ignored).
+  # @param type Type of result, either a list or a map.
+  #---------------------------------------------------------------------------------------
+  
+  def self.read(filename,
+                col_sep: ",",
+                comment_starts: false,
+                comment_matches: false,
+                headers: nil,
+                ignore_empty_lines: true,
+                type: :list,
+                surrounding_space_need_quotes: false,
+                quote_char: "\"",
+                &block)
+
+    @builder = CsvPreference::Builder.new(quote_char.to_java(:char), col_sep.ord, "\n")
+    @builder.skipComments(CommentStartsWith.new(comment_starts)) if comment_starts
+    @builder.skipComments(CommentMatches.new(comment_matches)) if comment_matches
+    @builder.ignoreEmptyLines(ignore_empty_lines)
+    @builder.surroundingSpacesNeedQuotes(surrounding_space_need_quotes)
+    
+    preferences = @builder.build
+    parser = Jcsv.new(filename, preferences, type: type)
+    parser.send(:parse_all, &block)
+      
+  end
+
+  #---------------------------------------------------------------------------------------
+  # @param end_of_line_symbols The end of line symbols to use when writing (Windows, Mac
+  # and Linux style line breaks are all supported when reading, so this preference won't be
+  # used at all for reading).
+  # @param encoder Use your own encoder when writing CSV. See the section on custom
+  # encoders below.
+  # quoteMode
+  # Allows you to enable surrounding quotes for writing (if a column wouldn't normally be
+  # quoted because it doesn't contain special characters). See the section on quote modes below.
   #---------------------------------------------------------------------------------------
 
-  def self.read(filename, *options)
-    parser = Jcsv.new(filename)
-    parser.set_options(*options) if options.size > 0
-    parser.send(:parse_all)
+  def self.write
+
   end
-  
+
   #---------------------------------------------------------------------------------------
   #
   #---------------------------------------------------------------------------------------
-
-  def self.foreach(filename, *options, &block)
-    parser = Jcsv.new(filename)
-    parser.set_options(*options) if options.size > 0
-    parser.send(:parse_with_block, &block) if block_given?
-  end
-
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
   
-  def initialize(filename)
+  def initialize(filename, preferences, type:)
     
     @filename = filename
-    @settings = CsvParserSettings.new
+    @type = type
+    @processors = Array.new
 
     begin
-      fis = java.io.FileInputStream.new(filename);
-      @isr = java.io.InputStreamReader.new(fis);
+      case type
+      when :list
+        @reader = CsvListReader.new(FileReader.new(@filename), preferences);
+      when :map
+        @reader = CsvMapReader.new(FileReader.new(@filename),
+                                   CsvPreference::STANDARD_PREFERENCE);
+      else
+        raise "Wrong type for reading CSV file: #{type}"
+      end
+      
     rescue java.io.IOException => e
       p e
     end
-        
-  end
 
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def set_options(options)
-    options.each do |opt, val|
-      send(opt, val)
-    end
-  end
-
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def col_sep(char = nil)
-    (char)?
-      @settings.getFormat().setDelimiter(char) :
-      @settings.getFormat().getDelimiter()
-  end
-
-  def col_sep?(char)
-    @settings.getFormat().isDelimiter(char)
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def comment_char(char = nil)
-    (char)?
-      @settings.getFormat().setComment(char) :
-      @settings.getFormat().getComment()
-  end
-
-  #---------------------------------------------------------------------------------------
-  #  Identifies whether or not a given character represents a comment
-  #---------------------------------------------------------------------------------------
-  
-  def comment_char?(char)
-    @settings.getFormat().isComment(char)
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def has_header(bool)
-    @settings.headerExtractionEnabled(bool)
-  end
     
-  #---------------------------------------------------------------------------------------
-  # The line separator sequence is defined here to ensure systems such as MacOS and Windows
-  # are able to process this file correctly 
-  # MacOS uses '\r'; and Windows uses '\r\n'.
-  #---------------------------------------------------------------------------------------
-
-  def row_sep(char = nil)
-    (char)?
-      @settings.getFormat().setLineSeparator(char) :
-      @settings.getFormat().getLineSeparator
-  end
-
-  #---------------------------------------------------------------------------------------
-  # Compares the given character against the normalizedNewline character.
-  #---------------------------------------------------------------------------------------
-  
-  def row_sep?(char)
-    @settings.getFormat().isNewLine(char)
-  end
-  
-  def row_sep_string
-    @settings.getFormat().getLineSeparatorString()
-  end
-  
-  #---------------------------------------------------------------------------------------
-  # Defines the maximum number of characters allowed for any given value being
-  # written/read. Used to avoid OutOfMemoryErrors (defaults to 4096).
-  #---------------------------------------------------------------------------------------
-
-  def field_size_limit(size)
-    @settings.setMaxCharsPerColumn(size)
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def converters(converters)
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def unconverted_fields
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def headers
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def return_headers
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def header_converters
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def skip_blanks
-  end
-  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def force_quotes
   end
   
   #---------------------------------------------------------------------------------------
@@ -215,18 +153,22 @@ class Jcsv
   #---------------------------------------------------------------------------------------
 
   private
-
+  
   #---------------------------------------------------------------------------------------
-  # Collects all lines as array of fields
+  #
   #---------------------------------------------------------------------------------------
 
-  def parse_all
+  def parse_all(&block)
 
-    rows = Array.new
-    parse_with_block do |row|
-      rows << row
+    if (!block_given?)
+      rows = Array.new
+      parse_with_block do |row|
+        rows << row
+      end
+      return rows
+    else
+      parse_with_block(&block)
     end
-    rows
 
   end
 
@@ -236,30 +178,12 @@ class Jcsv
 
   def parse_with_block(&block)
 
-    begin
-      # creates a CSV parser
-      parser = CsvParser.new(@settings);
-      
-      # call beginParsing to read records one by one, iterator-style.
-      parser.beginParsing(@isr);
-      
-      while ((str = parser.parseNext()) != nil)
-        block.call(str.to_a)
-      end
-      
-      # The resources are closed automatically when the end of the input is reached,
-      # or when an error happens, but you can call stopParsing() at any time.
-      
-      # You only need to use this if you are not parsing the entire content.
-      # But it doesn't hurt if you call it anyway.
-      parser.stopParsing();
-
-    rescue com.univocity.parsers.common.TextParsingException => e
-      p e
-      raise "Parsing error"
+    while ((row = @reader.read) != nil)
+      block.call(row.to_a)
     end
     
   end
   
 end
+  
 
