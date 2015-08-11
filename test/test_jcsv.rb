@@ -39,49 +39,53 @@ class CSVTest < Test::Unit::TestCase
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-
+=begin
     should "parse a csv file the quick way" do
 
-      #Jcsv.processors(:customerNo => :not_null, :firstName => :not_null,
-      #                :lastName => :not_null) 
-        
       # Reads all rows in memory and return and array of arrays. Each line is stored in
-      # one array
-      p Jcsv.read("customer.csv", headers: true, comment_starts: "#")
+      # one array.  Data is stored in the 'rows' instance variable. 
+      content = Jcsv.read("customer.csv", has_headers: true, comment_starts: "#")
+      p content.rows
+      p content.headers
+      print("\n")
 
-      Jcsv.read("customer.csv", headers: true, comment_starts: "#") { |row| p row }
-
-      Jcsv.read("example.csv", comment_starts: "#") do |row|
+      # read lines and pass them to a block for processing. The block receives the row
+      # and the headers.  If has_haders is false, then headers will be nil. Instead of
+      # method foreach, one could also use method 'read' with a block.  'read' and
+      # 'foreach' are identical. 
+      content = Jcsv.foreach("customer.csv", has_headers: true,
+                             comment_starts: "#") do |row, headers|
+        p headers
         p row
       end
+
+      # In this case, rows is nil, since the content is passed one row at a time for
+      # processing.       
+      assert_equal(nil, content.rows)
       
-      # p Jcsv.read("customer.csv", type: :map)
-=begin
-      # Processes each line.
-      Jcsv.foreach("example.csv", row_sep: "\n") do |row|
-        p row
-      end
-
-      # field_size_limit limits the number of characters in a column to prevent out of
-      # memory errors
-      # Jcsv.foreach("example.csv", row_sep: "\n", field_size_limit: 3)
-
-      # Lines that start with comment_char are treated as comment and discarted
-      p Jcsv.read("sleep.csv", row_sep: "\n", col_sep: ";", comment_char: "#")
-=end      
     end
-
+=end
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-=begin
-    should "parse a csv file the powerful way" do
 
-      parser = Jcsv.new("example.csv")
-      settings = parser.settings
+    should "parse a csv file with processors" do
+
+      # Creating a new parser, if has_headers is true, automatically reads the headers
+      parser = Jcsv.new("example.csv", has_headers: true, comment_starts: "#")
+      assert_equal(["Year", "Make", "Model", "Description", "Price"], parser.headers)
+
+      parser = Jcsv.new("customer.csv", has_headers: true, comment_starts: "#")
+      parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
+                        "married" => Jcsv.optional(Jcsv.bool)}
+
+      parser.read do |row|
+        p row
+      end
       
     end
-=end    
+    
+
   end
 
 end

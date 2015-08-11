@@ -22,6 +22,7 @@
 ##########################################################################################
 
 require_relative '../config'
+require_relative 'filters'
 
 # Ignoring surrounding spaces if they're not within quotes
 # In accordance with RFC 4180, the default behaviour of Super CSV is to treat all spaces
@@ -57,14 +58,15 @@ require_relative '../config'
 
 class Jcsv
   include_package "java.io"
-  include_package "org.supercsv.cellprocessor"
-  include_package "org.supercsv.cellprocessor.constraint"
   include_package "org.supercsv.io"
   include_package "org.supercsv.cellprocessor.ift"
   include_package "org.supercsv.prefs"
   include_package "org.supercsv.comment"
-
+  
+  attr_reader :rows
+  attr_reader :headers
   attr_reader :builder
+  attr_reader :filters
   
   #---------------------------------------------------------------------------------------
   # read the whole file at once
@@ -82,27 +84,16 @@ class Jcsv
   # @param type Type of result, either a list or a map.
   #---------------------------------------------------------------------------------------
   
-  def self.read(filename,
-                col_sep: ",",
-                comment_starts: false,
-                comment_matches: false,
-                headers: nil,
-                ignore_empty_lines: true,
-                type: :list,
-                surrounding_space_need_quotes: false,
-                quote_char: "\"",
-                &block)
+  def self.read(filename, *preferences, &block)
 
-    @builder = CsvPreference::Builder.new(quote_char.to_java(:char), col_sep.ord, "\n")
-    @builder.skipComments(CommentStartsWith.new(comment_starts)) if comment_starts
-    @builder.skipComments(CommentMatches.new(comment_matches)) if comment_matches
-    @builder.ignoreEmptyLines(ignore_empty_lines)
-    @builder.surroundingSpacesNeedQuotes(surrounding_space_need_quotes)
-    
-    preferences = @builder.build
-    parser = Jcsv.new(filename, preferences, type: type)
+    parser = Jcsv.new(filename, *preferences)
     parser.send(:parse_all, &block)
+    parser
       
+  end
+
+  class << self
+    alias :foreach :read
   end
 
   #---------------------------------------------------------------------------------------
@@ -124,11 +115,29 @@ class Jcsv
   #
   #---------------------------------------------------------------------------------------
   
-  def initialize(filename, preferences, type:)
+  def initialize(filename,
+                 col_sep: ",",
+                 comment_starts: false,
+                 comment_matches: false,
+                 has_headers: false,
+                 ignore_empty_lines: true,
+                 type: :list,
+                 surrounding_space_need_quotes: false,
+                 quote_char: "\"")
+
+    @rows = nil
+    @headers = nil
+    @filters = false
     
+    @builder = CsvPreference::Builder.new(quote_char.to_java(:char), col_sep.ord, "\n")
+    @builder.skipComments(CommentStartsWith.new(comment_starts)) if comment_starts
+    @builder.skipComments(CommentMatches.new(comment_matches)) if comment_matches
+    @builder.ignoreEmptyLines(ignore_empty_lines)
+    @builder.surroundingSpacesNeedQuotes(surrounding_space_need_quotes)
+    
+    preferences = @builder.build
+
     @filename = filename
-    @type = type
-    @processors = Array.new
 
     begin
       case type
@@ -140,11 +149,41 @@ class Jcsv
       else
         raise "Wrong type for reading CSV file: #{type}"
       end
-      
     rescue java.io.IOException => e
       p e
     end
 
+    @headers = @reader.getHeader(true).to_a if has_headers 
+    
+  end
+  
+  #---------------------------------------------------------------------------------------
+  #
+  #---------------------------------------------------------------------------------------
+
+  def filters=(filters)
+
+    @filters = Hash.new
+
+    # by default, all columns are required
+    @headers.each do |column_name|
+      @filters[column_name] = Jcsv.not_null
+    end
+    
+    filters.each do |column_name, processor|
+      @filters[column_name] = processor
+    end
+    
+  end
+
+  #---------------------------------------------------------------------------------------
+  #
+  #---------------------------------------------------------------------------------------
+
+  def read(headers: false, &block)
+
+    parse_all(headers, &block)
+    self
     
   end
   
@@ -158,16 +197,16 @@ class Jcsv
   #
   #---------------------------------------------------------------------------------------
 
-  def parse_all(&block)
+  def parse_all(headers, &block)
 
     if (!block_given?)
-      rows = Array.new
-      parse_with_block do |row|
-        rows << row
+      @rows = Array.new
+      parse_with_block(headers) do |row|
+        @rows << row
       end
-      return rows
+      return @rows
     else
-      parse_with_block(&block)
+      parse_with_block(headers, &block)
     end
 
   end
@@ -176,14 +215,20 @@ class Jcsv
   #
   #---------------------------------------------------------------------------------------
 
-  def parse_with_block(&block)
+  def parse_with_block(headers, &block)
 
-    while ((row = @reader.read) != nil)
-      block.call(row.to_a)
+    if @filters
+      read = @reader.java_method :read, [CellProcessor[]]
+      ex = Proc.new { read.call(@filters.values.to_java(CellProcessor)) }
+    else
+      read = @reader.java_method :read
+      ex = Proc.new { read.call }
+    end
+
+    while ((row = ex.call) != nil)
+      block.call(row.to_a, @headers)
     end
     
   end
   
 end
-  
-
