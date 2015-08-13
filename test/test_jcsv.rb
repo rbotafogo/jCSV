@@ -64,7 +64,7 @@ class CSVTest < Test::Unit::TestCase
       assert_equal(nil, content.rows)
       
     end
-=end
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -80,6 +80,30 @@ class CSVTest < Test::Unit::TestCase
                         "married" => Jcsv.optional(Jcsv.bool)}
 
       parser.read do |row|
+        p row
+      end
+      
+    end
+=end
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "parse a csv file to map" do
+
+      parser = Jcsv.new("customer.csv", type: :map, default_filter: Jcsv.not_null,
+                        headers: true, comment_starts: "#")
+      parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
+                        "married" => Jcsv.optional(Jcsv.bool),
+                        "loyaltyPoints" => Jcsv.long,
+                        "birthDate" => Jcsv.date("dd/mm/yyyy")}
+
+      parser.read do |line_no, row_no, row, headers|
+        # line_no is the last line of the parsed row
+        # row_no is the row number
+        # row is the row containt
+        # headers are the column headers
+        p "line: #{line_no}, row: #{row_no}"
         p row
       end
       
