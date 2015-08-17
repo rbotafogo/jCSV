@@ -264,7 +264,47 @@ class Jcsv
     end
     
   end
-  
+
+  class CLR < org.supercsv.io.CsvListReader
+    include_package "org.supercsv.cellprocessor.ift"
+    include_package "org.supercsv.util"
+    include_package "org.supercsv.io"
+    include ICsvListReader
+
+    def read(filters)
+      (filters.nil?)? super() : super(filters.values.to_java(CellProcessor))
+    end
+
+    
+    def executeProcessors(processedColumns = Array.new, processors)
+
+      source = getColumns()
+      raise "Processos should not be null" if processors == nil
+      
+      context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
+      context.setRowSource(source);
+
+      raise "The number of columns to be processed #{source.size} must match the number of 
+CellProcessors #{processors.length}" if (source.size != processors.length)
+
+      source.each_with_index do |s, i|
+        context.setColumnNumber(i + 1)
+        if (processors[i] == nil)
+          processedColumns << s
+        else
+          cell = processors[i].execute(s, context)
+          cell = (cell.is_a? Pack)? cell.ruby_obj : cell 
+          processedColumns << cell
+        end
+        
+      end
+      
+      processedColumns
+
+    end
+
+  end
+    
   #========================================================================================
   #
   #========================================================================================
@@ -288,7 +328,7 @@ class Jcsv
     def new_reader(preferences)
 
       begin
-        @reader = CsvListReader.new(FileReader.new(@filename), preferences);
+        @reader = CLR.new(FileReader.new(@filename), preferences);
       rescue java.io.IOException => e
         p e
       end
@@ -300,7 +340,12 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     
     def parse_with_block(&block)
+
+      while ((row = @reader.read(@filters)) != nil)
+        block.call(@reader.getLineNumber(), @reader.getRowNumber(), row.to_a, @headers)
+      end
       
+=begin
       if @filters
         read = @reader.java_method :read, [CellProcessor[]]
         ex = Proc.new { read.call(@filters.values.to_java(CellProcessor)) }
@@ -312,6 +357,7 @@ class Jcsv
       while ((row = ex.call) != nil)
         block.call(@reader.getLineNumber(), @reader.getRowNumber(), row.to_a, @headers)
       end
+=end
       
     end
 

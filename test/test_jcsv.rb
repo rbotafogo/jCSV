@@ -91,12 +91,12 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse a csv file to map" do
 
-      parser = Jcsv.new("customer.csv", type: :map, default_filter: Jcsv.not_null,
+      parser = Jcsv.new("customer.csv", type: :list, default_filter: Jcsv.not_null,
                         headers: true, comment_starts: "#")
       parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
                         "married" => Jcsv.optional(Jcsv.bool),
                         "loyaltyPoints" => Jcsv.long,
-                        "birthDate" => Jcsv.date("dd/mm/yyyy")}
+                        "birthDate" => Jcsv.date("dd/mm/yyyy", true, RBParseDate.new)}
 
       parser.read do |line_no, row_no, row, headers|
         # line_no is the last line of the parsed row

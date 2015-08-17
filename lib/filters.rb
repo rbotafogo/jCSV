@@ -21,6 +21,32 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+class Pack
+
+  attr_reader :ruby_obj
+  
+  def initialize(val)
+    @ruby_obj = val
+  end
+  
+end
+
+class RBParseDate < org.supercsv.cellprocessor.CellProcessorAdaptor
+  include_package "org.supercsv.cellprocessor.ift"
+  include DateCellProcessor
+  
+  def initialize(next_filter = nil)
+    (next_filter)? super(next_filter): super()
+  end
+  
+  def execute(value, context)
+    validateInputNotNull(value, context)
+    Pack.new(Time.at(value.getTime()/1000))
+  end
+  
+end
+
+  
 class Jcsv
   include_package "org.supercsv.cellprocessor"
   include_package "org.supercsv.cellprocessor.constraint"
@@ -37,8 +63,8 @@ class Jcsv
     ParseChar.new
   end
   
-  def self.date(date)
-    ParseDate.new(date)
+  def self.date(date, lenient = nil, next_filter = nil)
+    ParseDate.new(date, lenient, next_filter)
   end
 
   def self.double
