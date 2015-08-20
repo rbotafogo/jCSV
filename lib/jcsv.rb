@@ -23,6 +23,7 @@
 
 require_relative '../config'
 require_relative 'filters'
+require_relative 'reader'
 
 # Ignoring surrounding spaces if they're not within quotes
 # In accordance with RFC 4180, the default behaviour of Super CSV is to treat all spaces
@@ -59,6 +60,8 @@ require_relative 'filters'
 class Jcsv  
   include_package "org.supercsv.cellprocessor.ift"
 
+  attr_reader :reader
+  
   #---------------------------------------------------------------------------------------
   # read the whole file at once
   # Accepts the following options:
@@ -77,9 +80,9 @@ class Jcsv
   
   def self.read(filename, *preferences, &block)
 
-    parser = Jcsv::Reader.new(filename, *preferences)
-    parser.send(:parse_all, &block)
-    parser
+    reader = build(filename, *preferences)
+    reader.send(:parse_all, &block)
+    reader.rows
       
   end
 
@@ -106,13 +109,13 @@ class Jcsv
   #
   #---------------------------------------------------------------------------------------
 
-  def initialize(*params)
+  def self.build(*params)
 
     case params[1][:type]
-    when :list
-      @reader = Jcsv::ListReader.new(*params)
     when :map
       @reader = Jcsv::MapReader.new(*params)
+    else
+      @reader = Jcsv::ListReader.new(*params)
     end
     
   end
@@ -133,290 +136,4 @@ class Jcsv
     @reader.filters=(filters)
   end
   
-  #========================================================================================
-  #
-  #========================================================================================
-  
-  class Reader
-    include_package "org.supercsv.cellprocessor.ift"
-    include_package "org.supercsv.prefs"
-    include_package "org.supercsv.comment"
-    
-    attr_reader :col_sep
-    attr_reader :comment_starts
-    attr_reader :comment_matches
-    attr_reader :ignore_empty_lines
-    attr_reader :type
-    attr_reader :surrounding_space_need_quotes
-    attr_reader :quote_char
-    
-    attr_reader :rows
-    attr_reader :headers
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def initialize(filename,
-                   col_sep: ",",
-                   comment_starts: false,
-                   comment_matches: false,
-                   default_filter: Jcsv.optional,
-                   headers: false,
-                   ignore_empty_lines: true,
-                   type: :list,
-                   surrounding_space_need_quotes: false,
-                   quote_char: "\"")
-      
-      @filename = filename
-      @col_sep = col_sep
-      @comment_starts = comment_starts
-      @comment_matches = comment_matches
-      @default_filter = default_filter
-      @headers = headers
-      @ignore_empty_lines = ignore_empty_lines
-      @type = type
-      @surrounding_space_need_quotes = surrounding_space_need_quotes
-      @quote_char = quote_char
-      
-      @rows = nil
-      @filters = false
-
-      # Prepare preferences
-      @builder = CsvPreference::Builder.new(quote_char.to_java(:char), col_sep.ord, "\n")
-      @builder.skipComments(CommentStartsWith.new(comment_starts)) if comment_starts
-      @builder.skipComments(CommentMatches.new(comment_matches)) if comment_matches
-      @builder.ignoreEmptyLines(ignore_empty_lines)
-      @builder.surroundingSpacesNeedQuotes(surrounding_space_need_quotes)
-      
-      # create a new reader with the proper preferences
-      new_reader(@builder.build)
-
-      # if headers then read them
-      @headers = @reader.getHeader(true).to_a if @headers 
-      
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def filters=(filters)
-      
-      @filters = Hash.new
-      
-      case filters
-      when Hash
-        if (@headers)
-          # by default, all columns are required
-          @headers.each do |column_name|
-            @filters[column_name] = @default_filter
-          end
-          
-          filters.each do |column_name, processor|
-            @filters[column_name] = processor
-          end
-        else
-          raise "CSV file does not have headers.  Cannot match filters with headers"
-        end
-      when Array
-        raise "One filter needed for each column.  Filters size: #{filters.size}"
-        filters.each_with_index do |processor, i|
-          @filters[i] = processor
-        end
-      else
-        raise "Filters parameters should either be a hash or an array of filters"
-      end
-      
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def read(&block)
-      parse_all(&block)
-      self
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    private
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def parse_all(&block)
-      
-      if (!block_given?)
-        @rows = Array.new
-        parse_with_block do |row|
-          @rows << row
-        end
-        return @rows
-      else
-        parse_with_block(&block)
-      end
-      
-    end
-    
-  end
-
-  class CLR < org.supercsv.io.CsvListReader
-    include_package "org.supercsv.cellprocessor.ift"
-    include_package "org.supercsv.util"
-    include_package "org.supercsv.io"
-    include ICsvListReader
-
-    def read(filters)
-      (filters.nil?)? super() : super(filters.values.to_java(CellProcessor))
-    end
-
-    
-    def executeProcessors(processedColumns = Array.new, processors)
-
-      source = getColumns()
-      raise "Processos should not be null" if processors == nil
-      
-      context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
-      context.setRowSource(source);
-
-      raise "The number of columns to be processed #{source.size} must match the number of 
-CellProcessors #{processors.length}" if (source.size != processors.length)
-
-      source.each_with_index do |s, i|
-        context.setColumnNumber(i + 1)
-        if (processors[i] == nil)
-          processedColumns << s
-        else
-          cell = processors[i].execute(s, context)
-          cell = (cell.is_a? Pack)? cell.ruby_obj : cell 
-          processedColumns << cell
-        end
-        
-      end
-      
-      processedColumns
-
-    end
-
-  end
-    
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class ListReader < Reader
-    include_package "java.io"
-    include_package "org.supercsv.cellprocessor.ift"
-    include_package "org.supercsv.io"
-    include_package "org.supercsv.prefs"
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    private
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def new_reader(preferences)
-
-      begin
-        @reader = CLR.new(FileReader.new(@filename), preferences);
-      rescue java.io.IOException => e
-        p e
-      end
-      
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def parse_with_block(&block)
-
-      while ((row = @reader.read(@filters)) != nil)
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), row.to_a, @headers)
-      end
-      
-=begin
-      if @filters
-        read = @reader.java_method :read, [CellProcessor[]]
-        ex = Proc.new { read.call(@filters.values.to_java(CellProcessor)) }
-      else
-        read = @reader.java_method :read
-        ex = Proc.new { read.call }
-      end
-      
-      while ((row = ex.call) != nil)
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), row.to_a, @headers)
-      end
-=end
-      
-    end
-
-  end
-  
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class MapReader < Reader
-    include_package "java.io"
-    include_package "org.supercsv.cellprocessor.ift"
-    include_package "org.supercsv.io"
-    include_package "org.supercsv.prefs"
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def new_reader(preferences)
-      
-      begin
-        raise "Reading file as map requires headers." if !@headers
-        @reader = CsvMapReader.new(FileReader.new(@filename), preferences);
-      rescue java.io.IOException => e
-        p e
-      end
-
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    private
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def parse_with_block(&block)
-      
-      if @filters
-        if @headers
-          read = @reader.java_method :read, [java.lang.String[], CellProcessor[]]
-          ex = Proc.new { read.call(@headers.to_java(:string),
-                                    @filters.values.to_java(CellProcessor)) }
-        else 
-          read = @reader.java_method :read, [CellProcessor[]]
-          ex = Proc.new { read.call(@filters.values.to_java(CellProcessor)) }
-        end
-      end
-      
-      while ((row = ex.call) != nil)
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), row, @headers)
-      end
-      
-    end
-
-  end
-
 end

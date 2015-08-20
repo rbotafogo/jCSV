@@ -85,7 +85,7 @@ class CSVTest < Test::Unit::TestCase
       # Add filters, to filter the columns according to given rules. numberOfKids is
       # optional and should be converted to and int.  married is optional and should be
       # converted to a boolean
-      parser = Jcsv.new("customer.csv", headers: true)
+      parser = Jcsv.build("customer.csv", headers: true)
       parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
                         "married" => Jcsv.optional(Jcsv.bool),
                         "customerNo" => Jcsv.int}
@@ -109,17 +109,25 @@ class CSVTest < Test::Unit::TestCase
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
-      parser = Jcsv.new("customer.csv", type: :map, default_filter: Jcsv.not_nil,
+      parser = Jcsv.build("customer.csv", type: :map, default_filter: Jcsv.not_nil,
                         headers: true)
 
       # Set numberOfKids and married as optional, otherwise an exception will be raised
-      parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-                        "married" => Jcsv.optional(Jcsv.bool),
-                        "loyaltyPoints" => Jcsv.long,
-                        "customerNo" => Jcsv.int,
+      parser.filters = {:numberOfKids => Jcsv.optional(Jcsv.int),
+                        :married => Jcsv.optional(Jcsv.bool),
+                        :loyaltyPoints => Jcsv.long,
+                        :customerNo => Jcsv.int,
                         "birthDate" => Jcsv.date("dd/mm/yyyy")}
+
+      # When parsing to map, it is possible to make a mapping. If column name is :false
+      # the column will be removed from the returned row
+      parser.mapping = {"numberOfKids" => :numero_criancas,
+                        "married" => "casado",
+                        "loyaltyPoints" => "pontos fidelidade",
+                        "customerNo" => :false}
       
       parser.read do |line_no, row_no, row, headers|
+        p row
         assert_equal({"customerNo"=>4, "firstName"=>"Bill", "lastName"=>"Jobs",
                       "birthDate"=>"1973-01-10 00:07:00 -0300",
                       "mailingAddress"=>"2701 San Tomas Expressway\nSanta Clara, CA 95050\nUnited States",
@@ -130,9 +138,9 @@ class CSVTest < Test::Unit::TestCase
       end
 
       # Will raise an exception as reading a file as map requires the header
-      assert_raise ( RuntimeError ) { Jcsv.new("customer.csv", type: :map) }
+      assert_raise ( RuntimeError ) { Jcsv.build("customer.csv", type: :map) }
 
-      parser = Jcsv.new("customer.csv", type: :map, default_filter: Jcsv.not_nil,
+      parser = Jcsv.build("customer.csv", type: :map, default_filter: Jcsv.not_nil,
                         headers: true)
       # Set numberOfKids and married as optional, otherwise an exception will be raised
       parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
