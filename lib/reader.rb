@@ -26,6 +26,32 @@ class Jcsv
   #========================================================================================
   #
   #========================================================================================
+
+  class Mapping
+
+    attr_reader :map
+
+    def initialize
+      @mapping = nil
+    end
+    
+    def [](index)
+      (@mapping.nil?)? index : @mapping[index].to_sym
+    end
+
+    def []=(index, value)
+      @mapping[index] = value
+    end
+
+    def map=(mapping)
+      @map = mapping
+    end
+    
+  end
+  
+  #========================================================================================
+  #
+  #========================================================================================
   
   class Reader
     include_package "org.supercsv.cellprocessor.ift"
@@ -42,6 +68,7 @@ class Jcsv
     
     attr_reader :rows
     attr_reader :headers
+    attr_reader :mapping
 
     #---------------------------------------------------------------------------------------
     #
@@ -56,7 +83,8 @@ class Jcsv
                    ignore_empty_lines: true,
                    type: :list,
                    surrounding_space_need_quotes: false,
-                   quote_char: "\"")
+                   quote_char: "\"",
+                   chunk_size: 1)
       
       @filename = filename
       @col_sep = col_sep
@@ -68,6 +96,8 @@ class Jcsv
       @type = type
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
+      @chunk_size = chunk_size
+      @mapping = Mapping.new
       
       @rows = nil
       @filters = false
@@ -83,7 +113,7 @@ class Jcsv
       new_reader(@builder.build)
 
       # if headers then read them
-      @mapping = @headers = @reader.getHeader(true).to_a if @headers 
+      @mapping.map = @headers = @reader.getHeader(true).to_a if @headers 
       
     end
     
@@ -124,28 +154,105 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
-    
-    def read(&block)
-      parse_all(&block)
-      self
+
+    def mapping=(map)
+      @mapping.map = map
     end
     
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
     
-    private
+    def executeProcessors(processors)
+
+      processedColumns = Array.new
+      
+      source = getColumns()
+      raise "Processos should not be null" if processors == nil
+      context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
+      context.setRowSource(source);
+
+      raise "The number of columns to be processed #{source.size} must match the number of 
+CellProcessors #{processors.length}" if (source.size != processors.length)
+
+      source.each_with_index do |s, i|
+
+        begin
+          context.setColumnNumber(i + 1)
+          if (processors[i] == nil)
+            processedColumns[@mapping[i]] = s
+          else
+            cell = processors[i].execute(s, context)
+            cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell 
+            processedColumns[@mapping[i]] = cell
+          end
+        rescue SuperCsvConstraintViolationException => e
+          raise "Contraint violation: #{context.toString}"
+        end
+        
+      end
+      
+      processedColumns
+      
+    end
     
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
     
-    def parse_all(&block)
-      
+    def read(&block)
+
       if (!block_given?)
         @rows = Array.new
         parse_with_block do |line_no, row_no, row, headers|
           @rows << row
+        end
+        @rows
+      else
+        parse_with_block(&block)
+      end
+      
+    end
+        
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def each(&block)
+      
+      if (!block_given?)
+        to_enum
+      else
+        parse_with_block(&block)
+      end
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    # private
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+=begin    
+    def each(&block)
+      
+      if (!block_given?)
+        @rows = Array.new
+        if (!@chunk_size)
+          parse_with_block do |line_no, row_no, row, headers|
+            @rows << row
+          end
+        else
+          size = 0
+          parse_with_block do |line_no, row_no, row, headers|
+            @rows << row
+            size += 1
+            break if size == @chunk_size
+          end
         end
         return @rows
       else
@@ -153,9 +260,9 @@ class Jcsv
       end
       
     end
-    
+=end    
   end
-
+  
 end
 
 require_relative 'list_reader'

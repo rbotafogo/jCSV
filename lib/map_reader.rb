@@ -53,7 +53,9 @@ class Jcsv
       if (readRow())
         
         processedColumns = Hash.new
+        
         source = getColumns()
+        raise "Processos should not be null" if processors == nil
         context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
         context.setRowSource(source);
         
@@ -105,6 +107,7 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
     def new_reader(preferences)
       
       begin
+        # if there is a proper mapping should also work... FIX!!
         raise "Reading file as map requires headers." if !@headers
         @reader = CMR.new(FileReader.new(@filename), preferences);
       rescue java.io.IOException => e

@@ -31,41 +31,12 @@ class Jcsv
     include_package "org.supercsv.io"
     include ICsvListReader
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
     def read(filters)
       (filters == false)? super() : super(filters.values.to_java(CellProcessor))
-    end
-
-    
-    def executeProcessors(processedColumns = Array.new, processors)
-
-      source = getColumns()
-      raise "Processos should not be null" if processors == nil
-      
-      context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
-      context.setRowSource(source);
-
-      raise "The number of columns to be processed #{source.size} must match the number of 
-CellProcessors #{processors.length}" if (source.size != processors.length)
-
-      source.each_with_index do |s, i|
-
-        begin
-          context.setColumnNumber(i + 1)
-          if (processors[i] == nil)
-            processedColumns << s
-          else
-            cell = processors[i].execute(s, context)
-            cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell 
-            processedColumns << cell
-          end
-        rescue SuperCsvConstraintViolationException => e
-          raise "Contraint violation: #{context.toString}"
-        end
-        
-      end
-      
-      processedColumns
-
     end
 
   end
@@ -79,6 +50,26 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
     include_package "org.supercsv.cellprocessor.ift"
     include_package "org.supercsv.io"
     include_package "org.supercsv.prefs"
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def read_chunk
+
+      return (@reader.read(@filters)).to_a if @chunk_size == 1
+      
+      rows = Array.new
+      (1..@chunk_size).each do |i|
+        if ((row = @reader.read(@filters)).nil?)
+          break
+        else
+          rows << row.to_a
+        end
+      end
+      rows
+
+    end
 
     #---------------------------------------------------------------------------------------
     #
@@ -106,8 +97,8 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
     
     def parse_with_block(&block)
 
-      while ((row = @reader.read(@filters)) != nil)
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), row.to_a, @headers)
+      while ((chunk = read_chunk).size != 0)
+        block.call(@reader.getLineNumber(), @reader.getRowNumber(), chunk, @headers)
       end
       
     end

@@ -77,11 +77,12 @@ class Jcsv
   # are ignored. The default value is true (empty lines are ignored).
   # @param type Type of result, either a list or a map.
   #---------------------------------------------------------------------------------------
-  
+
+=begin
   def self.read(filename, *preferences, &block)
 
     reader = build(filename, *preferences)
-    reader.send(:parse_all, &block)
+    reader.send(:each, &block)
     reader.rows
       
   end
@@ -89,7 +90,8 @@ class Jcsv
   class << self
     alias :foreach :read
   end
-
+=end
+  
   #---------------------------------------------------------------------------------------
   # @param end_of_line_symbols The end of line symbols to use when writing (Windows, Mac
   # and Linux style line breaks are all supported when reading, so this preference won't be
@@ -109,7 +111,7 @@ class Jcsv
   #
   #---------------------------------------------------------------------------------------
 
-  def self.build(*params)
+  def self.reader(*params)
 
     case params[1][:type]
     when :map
