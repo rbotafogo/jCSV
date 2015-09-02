@@ -28,78 +28,72 @@ class Jcsv
   #
   #========================================================================================
 
-  class CMR < org.supercsv.io.CsvMapReader
-    include_package "org.supercsv.cellprocessor.ift"
-    include_package "org.supercsv.exception"
-    include_package "org.supercsv.util"
-    include_package "org.supercsv.io"
-    include ICsvListReader
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def read(name_mapping, filters)
-      (filters == false)? super(*name_mapping) :
-        filter_input(name_mapping, filters.values.to_java(CellProcessor))
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def filter_input(name_mapping, processors)
-
-      if (readRow())
-        
-        processedColumns = Hash.new
-        
-        source = getColumns()
-        raise "Processos should not be null" if processors == nil
-        context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
-        context.setRowSource(source);
-        
-        raise "The number of columns to be processed #{source.size} must match the number of 
-CellProcessors #{processors.length}" if (source.size != processors.length)
-        
-        source.each_with_index do |s, i|
-          
-          begin
-            next if name_mapping[i] == nil
-            context.setColumnNumber(i + 1)
-            if (processors[i] == nil)
-              processedColumns[name_mapping[i].to_sym] = s
-            else
-              cell = processors[i].execute(s, context)
-              cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell 
-              processedColumns[name_mapping[i].to_sym] = cell
-            end
-          rescue SuperCsvConstraintViolationException => e
-            raise "Contraint violation: #{context.toString}"
-          end
-          
-        end
-
-        return processedColumns
-
-      end
-      
-      return nil
-      
-    end
-
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-
   class MapReader < Reader
     include_package "java.io"
     include_package "org.supercsv.cellprocessor.ift"
     include_package "org.supercsv.io"
     include_package "org.supercsv.prefs"
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def initialize(*params)
+      super(*params)
+      @processed_columns = Hash.new
+      @column_mapping.map = @headers
+    end
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def read_chunk
+
+      return _read.to_a if @chunk_size == 1
+      
+      rows = Array.new
+      (1..@chunk_size).each do |i|
+        if ((row = _read).nil?)
+          break
+        else
+          rows << row.to_a
+        end
+      end
+      rows
+
+    end
+
+    #---------------------------------------------------------------------------------------
+    # Maps columns to the given names
+    #---------------------------------------------------------------------------------------
+
+    def mapping=(column_mapping)
+
+      map = Array.new
+      
+      @headers.each do |h|
+        name = column_mapping[h]
+        if (name.nil?)
+          map << h
+        elsif (name == :false)
+          map << nil
+        else
+          map << name
+        end
+        # map << ((name_mapping[h].nil?)? h : name_mapping[h])
+      end
+      
+      @column_mapping = map
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    private
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -115,36 +109,7 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
       end
 
     end
-    
-    #---------------------------------------------------------------------------------------
-    # Maps columns to the given names
-    #---------------------------------------------------------------------------------------
 
-    def mapping=(name_mapping)
-
-      map = Array.new
-      @headers.each do |h|
-        name = name_mapping[h]
-        if (name.nil?)
-          map << h
-        elsif (name == :false)
-          map << nil
-        else
-          map << name
-        end
-        # map << ((name_mapping[h].nil?)? h : name_mapping[h])
-      end
-      
-      @mapping = map
-      
-    end
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    private
-    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------

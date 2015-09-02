@@ -75,8 +75,8 @@ class Jcsv
     ParseChar.new
   end
   
-  def self.date(date, lenient = nil, next_filter = nil)
-    ParseDate.new(date, true, Jcsv::RBParseDate.new(next_filter))
+  def self.date(date_format, lenient = false, next_filter = nil)
+    ParseDate.new(date_format, lenient, Jcsv::RBParseDate.new(next_filter))
   end
 
   def self.double

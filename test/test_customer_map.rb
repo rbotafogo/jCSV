@@ -40,75 +40,6 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
-    should "parse a csv file the quick way" do
-
-      # Reads all rows in memory and return and array of arrays. Each line is stored in
-      # one array.  Data is stored in the 'rows' instance variable. 
-      reader = Jcsv.reader("customer.csv", headers: true)
-      content = reader.read
-      assert_equal(["1", "John", "Dunbar", "13/06/1945",
-                    "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
-                    nil, nil, "\"May the Force be with you.\" - Star Wars",
-                    "jdunbar@gmail.com", "0"], content.rows[0])
-
-      # Setting headers to false, will read the header as a normal line
-      reader = Jcsv.reader("customer.csv", headers: false)
-      content = reader.read
-      assert_equal(["customerNo", "firstName", "lastName", "birthDate",
-                    "mailingAddress", "married", "numberOfKids", "favouriteQuote",
-                    "email", "loyaltyPoints"], content.rows[0])
-      
-      # read lines and pass them to a block for processing. The block receives the
-      # line_no (last line of the record), row_no, row and the headers.  If has_haders is
-      # false, then headers will be nil. Instead of
-      # method foreach, one could also use method 'read' with a block.  'read' and
-      # 'foreach' are identical. 
-      reader = Jcsv.reader("customer.csv", headers: true)
-      
-      reader.read do |line_no, row_no, row, headers|
-        
-        assert_equal(["customerNo", "firstName", "lastName", "birthDate",
-                      "mailingAddress", "married", "numberOfKids", "favouriteQuote",
-                      "email", "loyaltyPoints"], headers)
-
-        # Since the file has a header, the third record is row_no = 4
-        assert_equal(["3", "Alice", "Wunderland",
-                      "08/08/1985", "One Microsoft Way\nRedmond, WA 98052-6399\nUnited States",
-                      "Y", "0", "\"Play it, Sam. Play \"As Time Goes By.\"\" - Casablanca",
-                      "throughthelookingglass@yahoo.com", "2255887799"], row) if row_no == 4
-      end
-      
-    end
-=begin
-    #-------------------------------------------------------------------------------------
-    #
-    #-------------------------------------------------------------------------------------
-
-    should "parse a csv file with filters" do
-
-      # Add filters, to filter the columns according to given rules. numberOfKids is
-      # optional and should be converted to and int.  married is optional and should be
-      # converted to a boolean
-      parser = Jcsv.reader("customer.csv", headers: true)
-      parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-                        "married" => Jcsv.optional(Jcsv.bool),
-                        "customerNo" => Jcsv.int}
-      
-      parser.read do |line_no, row_no, row, headers|
-        # notice that field married that was "Y" is now true. Number of kids is not "0",
-        # but 0, customerNo is also and int
-        assert_equal([3, "Alice", "Wunderland",
-                      "08/08/1985", "One Microsoft Way\nRedmond, WA 98052-6399\nUnited States",
-                      true, 0, "\"Play it, Sam. Play \"As Time Goes By.\"\" - Casablanca",
-                      "throughthelookingglass@yahoo.com", "2255887799"], row) if row_no == 4
-      end
-      
-    end
-
-    #-------------------------------------------------------------------------------------
-    #
-    #-------------------------------------------------------------------------------------
-
     should "parse a csv file to map" do
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
@@ -131,7 +62,6 @@ class CSVTest < Test::Unit::TestCase
                         "customerNo" => :false}
       
       parser.read do |line_no, row_no, row, headers|
-        # p row
         assert_equal({"customerNo"=>4, "firstName"=>"Bill", "lastName"=>"Jobs",
                       "birthDate"=>"1973-01-10 00:07:00 -0300",
                       "mailingAddress"=>"2701 San Tomas Expressway\nSanta Clara, CA 95050\nUnited States",
@@ -145,57 +75,21 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( RuntimeError ) { Jcsv.reader("customer.csv", type: :map) }
 
       parser = Jcsv.reader("customer.csv", type: :map, default_filter: Jcsv.not_nil,
-                        headers: true)
+                           headers: true)
+      
       # Set numberOfKids and married as optional, otherwise an exception will be raised
       parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
                         "loyaltyPoints" => Jcsv.long,
                         "customerNo" => Jcsv.int,
                         "birthDate" => Jcsv.date("dd/mm/yyyy")}
 
+      parser.read { |line_no, row_no, row, headers| }
       # Will raise an exception, as the default_filter is not_nil and there is a record
       # in which field 'married' is nil
-      assert_raise ( RuntimeError ) { parser.read { |line_no, row_no, row, headers| } }
+      # assert_raise ( RuntimeError ) { parser.read { |line_no, row_no, row, headers| } }
       
     end
 
-    #-------------------------------------------------------------------------------------
-    #
-    #-------------------------------------------------------------------------------------
-
-    should "Read in blocks" do
-      
-      # Reads all rows in memory and return and array of arrays. Each line is stored in
-      # one array.  Data is stored in the 'rows' instance variable. 
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 4)
-
-      enum = reader.each do |line_no, row_no, chunk, headers|
-        p chunk
-      end
-      
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 1)
-      enum = reader.each
-      c = enum.next
-
-      p c[0]
-      p c[1]
-      p c[2]
-
-      p "second block"
-      c = enum.next
-      p c[0]
-      p c[1]
-
-      begin
-      
-        p enum.next
-        p enum.next
-        p enum.next
-      rescue StopIteration => e
-        p e
-      end
-
-    end
-=end
   end
   
 end

@@ -29,14 +29,14 @@ class Jcsv
 
   class Mapping
 
-    attr_reader :map
+    attr_reader :mapping
 
     def initialize
       @mapping = nil
     end
     
     def [](index)
-      (@mapping.nil?)? index : @mapping[index].to_sym
+      (@mapping.nil?)? index : @mapping[index]
     end
 
     def []=(index, value)
@@ -44,10 +44,10 @@ class Jcsv
     end
 
     def map=(mapping)
-      @map = mapping
+      @mapping = mapping
     end
     
-  end
+  end  
   
   #========================================================================================
   #
@@ -69,6 +69,8 @@ class Jcsv
     attr_reader :rows
     attr_reader :headers
     attr_reader :mapping
+    attr_reader :processed_column   # last processed column
+    attr_reader :name_mapping
 
     #---------------------------------------------------------------------------------------
     #
@@ -97,7 +99,6 @@ class Jcsv
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
       @chunk_size = chunk_size
-      @mapping = Mapping.new
       
       @rows = nil
       @filters = false
@@ -112,8 +113,42 @@ class Jcsv
       # create a new reader with the proper preferences
       new_reader(@builder.build)
 
-      # if headers then read them
-      @mapping.map = @headers = @reader.getHeader(true).to_a if @headers 
+      @column_mapping = Mapping.new
+      # if headers then read them and initialize the @column_mapping the same as the
+      # headers
+      @headers = @reader.getHeader(true).to_a if @headers
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    def read(&block)
+
+      if (!block_given?)
+        @rows = Array.new
+        parse_with_block do |line_no, row_no, row, headers|
+          @rows << row
+        end
+        @rows
+      else
+        parse_with_block(&block)
+      end
+      
+    end
+        
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def each(&block)
+      
+      if (!block_given?)
+        to_enum
+      else
+        parse_with_block(&block)
+      end
       
     end
     
@@ -156,111 +191,9 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def mapping=(map)
-      @mapping.map = map
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def executeProcessors(processors)
-
-      processedColumns = Array.new
-      
-      source = getColumns()
-      raise "Processos should not be null" if processors == nil
-      context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
-      context.setRowSource(source);
-
-      raise "The number of columns to be processed #{source.size} must match the number of 
-CellProcessors #{processors.length}" if (source.size != processors.length)
-
-      source.each_with_index do |s, i|
-
-        begin
-          context.setColumnNumber(i + 1)
-          if (processors[i] == nil)
-            processedColumns[@mapping[i]] = s
-          else
-            cell = processors[i].execute(s, context)
-            cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell 
-            processedColumns[@mapping[i]] = cell
-          end
-        rescue SuperCsvConstraintViolationException => e
-          raise "Contraint violation: #{context.toString}"
-        end
-        
-      end
-      
-      processedColumns
-      
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def read(&block)
-
-      if (!block_given?)
-        @rows = Array.new
-        parse_with_block do |line_no, row_no, row, headers|
-          @rows << row
-        end
-        @rows
-      else
-        parse_with_block(&block)
-      end
-      
-    end
-        
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def each(&block)
-      
-      if (!block_given?)
-        to_enum
-      else
-        parse_with_block(&block)
-      end
-      
+      @column_mapping.map = map
     end
 
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    # private
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-=begin    
-    def each(&block)
-      
-      if (!block_given?)
-        @rows = Array.new
-        if (!@chunk_size)
-          parse_with_block do |line_no, row_no, row, headers|
-            @rows << row
-          end
-        else
-          size = 0
-          parse_with_block do |line_no, row_no, row, headers|
-            @rows << row
-            size += 1
-            break if size == @chunk_size
-          end
-        end
-        return @rows
-      else
-        parse_with_block(&block)
-      end
-      
-    end
-=end    
   end
   
 end
