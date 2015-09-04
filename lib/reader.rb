@@ -163,7 +163,7 @@ class Jcsv
       case filters
       when Hash
         if (@headers)
-          # by default, all columns are required
+          # set all column filters to the @default_filter
           @headers.each do |column_name|
             @filters[column_name] = @default_filter
           end
@@ -176,7 +176,8 @@ class Jcsv
           raise "CSV file does not have headers.  Cannot match filters with headers"
         end
       when Array
-        raise "One filter needed for each column.  Filters size: #{filters.size}"
+        raise "One filter needed for each column.  Filters size: #{filters.size}" if
+          headers && (headers.size != filters.size)
         filters.each_with_index do |processor, i|
           @filters[i] = processor
         end

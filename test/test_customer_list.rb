@@ -35,7 +35,8 @@ class CSVTest < Test::Unit::TestCase
     setup do
 
     end
-=begin
+
+#=begin
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -166,7 +167,8 @@ class CSVTest < Test::Unit::TestCase
                        "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
                        nil, nil, "\"May the Force be with you.\" - Star Wars",
                        "jdunbar@gmail.com", "0"],
-                      [2, "Bob", "Down", "25/02/1919", "1601 Willow Rd.\nMenlo Park, CA 94025\nUnited States",
+                      [2, "Bob", "Down", "25/02/1919",
+                       "1601 Willow Rd.\nMenlo Park, CA 94025\nUnited States",
                        true, 0, "\"Frankly, my dear, I don't give a damn.\" - Gone With The Wind",
                        "bobdown@hotmail.com", "123456"]], chunk) if row_no == 3
       end
@@ -178,9 +180,11 @@ class CSVTest < Test::Unit::TestCase
 
       enum = reader.each do |line_no, row_no, chunk, headers|
         assert_equal([["1", "John", "Dunbar", "13/06/1945",
-                       "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States", nil, nil,
+                       "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
+                       nil, nil,
                        "\"May the Force be with you.\" - Star Wars", "jdunbar@gmail.com", "0"],
-                      ["2", "Bob", "Down", "25/02/1919", "1601 Willow Rd.\nMenlo Park, CA 94025\nUnited States",
+                      ["2", "Bob", "Down", "25/02/1919",
+                       "1601 Willow Rd.\nMenlo Park, CA 94025\nUnited States",
                        "Y", "0", "\"Frankly, my dear, I don't give a damn.\" - Gone With The Wind",
                        "bobdown@hotmail.com", "123456"],
                       ["3", "Alice", "Wunderland", "08/08/1985",
@@ -221,7 +225,8 @@ class CSVTest < Test::Unit::TestCase
       assert_equal([[1, "John", "Dunbar", "13/06/1945",
                      "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States", nil, nil,
                      "\"May the Force be with you.\" - Star Wars", "jdunbar@gmail.com", "0"],
-                    [2, "Bob", "Down", "25/02/1919", "1601 Willow Rd.\nMenlo Park, CA 94025\nUnited States",
+                    [2, "Bob", "Down", "25/02/1919",
+                     "1601 Willow Rd.\nMenlo Park, CA 94025\nUnited States",
                      true, 0, "\"Frankly, my dear, I don't give a damn.\" - Gone With The Wind",
                      "bobdown@hotmail.com", "123456"]], chunk[2])
       
@@ -258,7 +263,7 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( StopIteration ) { enum.next }
 
     end
-=end
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -268,12 +273,41 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", headers: true)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      #reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-       #                 "married" => Jcsv.optional(Jcsv.bool),
-        #                "customerNo" => Jcsv.int}
+      reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
+                        "married" => Jcsv.optional(Jcsv.bool),
+                        "customerNo" => Jcsv.int}
 
-      reader.mapping = [false, 0, 1, false, 2, false, false, false, false, 4]
-      # reader.mapping = {:numberOfKids => false, :married => false}
+      reader.mapping = {:customerNo => false, :numberOfKids => false, :loyaltyPoints => false}
+        
+      reader.read do |line_no, row_no, chunk, headers|
+        # p chunk
+      end
+
+
+    end
+#=end
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "Read file reordering columns" do
+
+      # Here we are setting headers to false, so the first line will not be considere
+      # a header.
+      reader = Jcsv.reader("customer_nh.csv", headers: false, chunk_size: 2)
+      # reading the headers returns false
+      assert_equal(false, reader.headers)
+
+      # When there are no headers setting filters and mapping needs to be done 
+      # using the columns position in the file.  Note that we can have specify fewer
+      # filters or mapping.
+      # Filters for the first 4 columns, the other columns will not be filtered
+      reader.filters = [Jcsv.optional, Jcsv.optional, Jcsv.int, Jcsv.date("dd/MM/yyyy")]
+
+      # Mapping allows reordering of columns.  In this example, column 2 will be in the
+      # 1st position, column 0 on the 2nd, column 3 will not show up, column 4 will
+      # be in the 3rd position, etc.
+      reader.mapping = [2, 0, false, 3, false, false, false, false, 1]
         
       reader.read do |line_no, row_no, chunk, headers|
         p chunk
@@ -281,7 +315,7 @@ class CSVTest < Test::Unit::TestCase
 
 
     end
-
+    
   end
 
 end

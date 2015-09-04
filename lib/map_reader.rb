@@ -22,7 +22,6 @@
 ##########################################################################################
 
 class Jcsv
-  include_package "org.supercsv.cellprocessor.ift"
 
   #========================================================================================
   #
@@ -30,9 +29,6 @@ class Jcsv
 
   class MapReader < Reader
     include_package "java.io"
-    include_package "org.supercsv.cellprocessor.ift"
-    include_package "org.supercsv.io"
-    include_package "org.supercsv.prefs"
 
     #---------------------------------------------------------------------------------------
     #
@@ -40,7 +36,6 @@ class Jcsv
 
     def initialize(*params)
       super(*params)
-      @processed_columns = Hash.new
       @column_mapping.map = @headers
     end
     
@@ -116,7 +111,7 @@ class Jcsv
     
     def parse_with_block(&block)
       
-      while ((row = @reader.read(@mapping, @filters)) != nil)
+      while ((row = @reader.read(@column_mapping, @filters)) != nil)
         block.call(@reader.getLineNumber(), @reader.getRowNumber(), row, @headers)
       end
       

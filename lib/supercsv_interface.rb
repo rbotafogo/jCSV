@@ -30,6 +30,7 @@ class Jcsv
 
   module Processors
     include_package "org.supercsv.util"
+    include_package "org.supercsv.exception"
     
     #---------------------------------------------------------------------------------------
     # This method uses variable @processed_columns that should be initialized in the class
@@ -46,7 +47,7 @@ class Jcsv
 
       if processors.size == 0
         source.each_with_index do |s, i|
-          next if @column_mapping[i] == false
+          next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
           @processed_columns[@column_mapping[i]] = s
         end
         return @processed_columns
@@ -56,20 +57,24 @@ class Jcsv
       context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
       context.setRowSource(source);
 
-      raise "The number of columns to be processed #{source.size} must match the number of 
-CellProcessors #{processors.length}" if (source.size != processors.length)
+      # raise "The number of columns to be processed #{source.size} must match the number of
+      # CellProcessors #{processors.length}" if (source.size != processors.length)
 
       source.each_with_index do |s, i|
 
         begin
-          next if @column_mapping[i] == false
+          next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
           context.setColumnNumber(i + 1)
-          if (processors[i] == nil)
+          if (i >= processors.size)
             @processed_columns[@column_mapping[i]] = s
           else
-            cell = processors[i].execute(s, context)
-            cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
-            @processed_columns[@column_mapping[i]] = cell
+            if (processors[i] == nil)
+              @processed_columns[@column_mapping[i]] = s
+            else
+              cell = processors[i].execute(s, context)
+              cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
+              @processed_columns[@column_mapping[i]] = cell
+            end
           end
         rescue SuperCsvConstraintViolationException => e
           raise "Contraint violation: #{context.toString}"
@@ -98,7 +103,8 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
     def read(column_mapping, filters)
 
       # initialize @processed_columns to a new Array.  This will be used by method
-      # executeProcessor from module Processors
+      # executeProcessor from module Processors.  @column_mapping also needs to be initialized
+      # to the column_mapping received. Used by methods in module Processors
       @processed_columns = Array.new
       @column_mapping = column_mapping
       
@@ -121,14 +127,15 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
     #
     #---------------------------------------------------------------------------------------
 
-    def read(name_mapping, filters)
+    def read(column_mapping, filters)
 
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors
       @processed_columns = Hash.new
+      @column_mapping = column_mapping
       
-      (filters == false)? super(*name_mapping) :
-        filter_input(name_mapping, filters.values.to_java(CellProcessor))
+      (filters == false)? super(*column_mapping.mapping) :
+        filter_input(column_mapping, filters.values.to_java(CellProcessor))
       
     end
     

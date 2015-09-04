@@ -56,6 +56,36 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
+    def mapping=(map)
+      
+      @column_mapping.map = Array.new
+      # @filters = Hash.new
+      
+      case map
+      when Hash
+        i = 0
+        @headers.each_with_index do |column_name, index|
+          if map[column_name.to_sym].nil?
+            @column_mapping.mapping[index] = i
+            i += 1
+          else
+            @column_mapping.mapping[index] = false
+          end
+        end
+      when Array
+        raise "Mapping size needs to be identical to the number of columns" if
+          headers && (headers.size != map.size)
+        @column_mapping.map = map
+      else
+        raise "Filters parameters should either be a hash or an array of filters"
+      end
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
     private
 
     #---------------------------------------------------------------------------------------

@@ -40,12 +40,40 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
+    should "parse a csv file to map the quick way" do
+
+      reader = Jcsv.reader("customer.csv", type: :map, headers: true)
+      # map is an array of hashes
+      map = reader.read
+      # get customerNo of second row
+      assert_equal("2", map[1]["customerNo"])
+      # loyaltyPoints from 4th row
+      assert_equal("36", map[3]["loyaltyPoints"])
+      
+    end
+=begin    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "parse a csv file to map without filters nor mappings in chunks" do
+
+      # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
+      # fields are required unless explicitly set to optional.
+      parser = Jcsv.reader("customer.csv", type: :map, headers: true, chunck_size: 2)
+
+    end
+    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
     should "parse a csv file to map" do
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
       parser = Jcsv.reader("customer.csv", type: :map, default_filter: Jcsv.not_nil,
-                        headers: true)
+                           headers: true)
 
       # Set numberOfKids and married as optional, otherwise an exception will be raised
       parser.filters = {:numberOfKids => Jcsv.optional(Jcsv.int),
@@ -89,7 +117,7 @@ class CSVTest < Test::Unit::TestCase
       # assert_raise ( RuntimeError ) { parser.read { |line_no, row_no, row, headers| } }
       
     end
-
+=end
   end
   
 end
