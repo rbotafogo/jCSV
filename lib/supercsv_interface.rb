@@ -28,6 +28,32 @@ class Jcsv
   #
   #========================================================================================
 
+  class Mapping
+
+    attr_reader :mapping
+
+    def initialize
+      @mapping = nil
+    end
+    
+    def [](index)
+      (@mapping.nil?)? index : @mapping[index]
+    end
+
+    def []=(index, value)
+      @mapping[index] = value
+    end
+
+    def map=(mapping)
+      @mapping = mapping
+    end
+    
+  end  
+
+  #========================================================================================
+  #
+  #========================================================================================
+
   module Processors
     include_package "org.supercsv.util"
     include_package "org.supercsv.exception"
@@ -53,7 +79,6 @@ class Jcsv
         return @processed_columns
       end
       
-      raise "Processos should not be null" if processors == nil
       context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
       context.setRowSource(source);
 
@@ -71,6 +96,7 @@ class Jcsv
             if (processors[i] == nil)
               @processed_columns[@column_mapping[i]] = s
             else
+              # p "#{i}: #{processors[i]}"
               cell = processors[i].execute(s, context)
               cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
               @processed_columns[@column_mapping[i]] = cell
@@ -144,9 +170,14 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def filter_input(name_mapping, processors)
+      executeProcessors(processors) if (readRow())
+    end
 
-      if (readRow())
-        
+  end
+  
+end
+
+=begin
         processedColumns = Hash.new
         
         source = getColumns()
@@ -177,12 +208,4 @@ CellProcessors #{processors.length}" if (source.size != processors.length)
 
         return processedColumns
 
-      end
-      
-      return nil
-      
-    end
-
-  end
-  
-end
+=end

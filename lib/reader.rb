@@ -22,32 +22,6 @@
 ##########################################################################################
 
 class Jcsv
-
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class Mapping
-
-    attr_reader :mapping
-
-    def initialize
-      @mapping = nil
-    end
-    
-    def [](index)
-      (@mapping.nil?)? index : @mapping[index]
-    end
-
-    def []=(index, value)
-      @mapping[index] = value
-    end
-
-    def map=(mapping)
-      @mapping = mapping
-    end
-    
-  end  
   
   #========================================================================================
   #
@@ -195,6 +169,45 @@ class Jcsv
       @column_mapping.map = map
     end
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    private
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def read_chunk
+
+      return @reader.read(@column_mapping, @filters) if @chunk_size == 1
+      
+      rows = Array.new
+      (1..@chunk_size).each do |i|
+        if ((row = @reader.read(@column_mapping, @filters)).nil?)
+          break
+        else
+          # rows << row.to_a
+          rows << row
+        end
+      end
+      (rows.size == 0)? nil : rows
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    def parse_with_block(&block)
+
+      while (!((chunk = read_chunk).nil?))
+        block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk), @headers)
+      end
+      
+    end
+    
   end
   
 end

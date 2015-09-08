@@ -123,7 +123,7 @@ class CSVTest < Test::Unit::TestCase
       # Add filters, to filter the columns according to given rules. numberOfKids is
       # optional and should be converted to and int.  married is optional and should be
       # converted to a boolean
-      parser = Jcsv.reader("customer.csv", headers: true)
+      parser = Jcsv.reader("customer.csv", headers: true, default_filter: Jcsv.not_nil)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
