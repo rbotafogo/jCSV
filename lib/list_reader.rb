@@ -39,7 +39,6 @@ class Jcsv
     def mapping=(map)
       
       @column_mapping.map = Array.new
-      # @filters = Hash.new
       
       case map
       when Hash

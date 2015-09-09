@@ -1,4 +1,4 @@
-"","treatment","base","age","seizure.rate","period","subject"
+"patient","treatment","base","age","seizure.rate","period","subject"
 "1","placebo",11,31,5,"1","1"
 "110","placebo",11,31,3,"2","1"
 "112","placebo",11,31,3,"3","1"

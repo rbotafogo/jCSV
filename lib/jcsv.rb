@@ -63,36 +63,6 @@ class Jcsv
   attr_reader :reader
   
   #---------------------------------------------------------------------------------------
-  # read the whole file at once
-  # Accepts the following options:
-  # @param comment_starts: character at the beginning of the line that marks a comment
-  # @param comment_matches: delimiters that match a comment, needs to comment at the beginning
-  # and end of the comment, such as <!.*!>, comments everyting between <! and !>
-  # @param quote_char The quote character (used when a cell contains special characters,
-  # such as the delimiter char, a quote char, or spans multiple lines).
-  # @param col_sep the delimiter character (separates each cell in a row).
-  # @param surrounding_spaces_need_quotes Whether spaces surrounding a cell need quotes in
-  # order to be preserved. The default value is false (quotes aren't required). 
-  # @param ignore_empty_lines Whether empty lines (i.e. containing only end of line symbols)
-  # are ignored. The default value is true (empty lines are ignored).
-  # @param type Type of result, either a list or a map.
-  #---------------------------------------------------------------------------------------
-
-=begin
-  def self.read(filename, *preferences, &block)
-
-    reader = build(filename, *preferences)
-    reader.send(:each, &block)
-    reader.rows
-      
-  end
-
-  class << self
-    alias :foreach :read
-  end
-=end
-  
-  #---------------------------------------------------------------------------------------
   # @param end_of_line_symbols The end of line symbols to use when writing (Windows, Mac
   # and Linux style line breaks are all supported when reading, so this preference won't be
   # used at all for reading).
@@ -113,15 +83,18 @@ class Jcsv
 
   def self.reader(*params)
 
-    case params[1][:type]
+    case params[1][:format]
     when :map
       @reader = Jcsv::MapReader.new(*params)
-    else
+    when :vector
+      @reader = Jcsv::VectorReader.new(*params)
+    else :list
       @reader = Jcsv::ListReader.new(*params)
     end
     
   end
 
+=begin  
   #---------------------------------------------------------------------------------------
   #
   #---------------------------------------------------------------------------------------
@@ -129,6 +102,7 @@ class Jcsv
   def read(&block)
     @reader.read(&block)
   end
+=end
 
   #---------------------------------------------------------------------------------------
   #

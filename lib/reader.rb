@@ -36,7 +36,7 @@ class Jcsv
     attr_reader :comment_starts
     attr_reader :comment_matches
     attr_reader :ignore_empty_lines
-    attr_reader :type
+    attr_reader :format
     attr_reader :surrounding_space_need_quotes
     attr_reader :quote_char
     
@@ -47,7 +47,18 @@ class Jcsv
     attr_reader :name_mapping
 
     #---------------------------------------------------------------------------------------
-    #
+    # Accepts the following options:
+    # @param comment_starts: character at the beginning of the line that marks a comment
+    # @param comment_matches: delimiters that match a comment, needs to comment at the beginning
+    # and end of the comment, such as <!.*!>, comments everyting between <! and !>
+    # @param quote_char The quote character (used when a cell contains special characters,
+    # such as the delimiter char, a quote char, or spans multiple lines).
+    # @param col_sep the delimiter character (separates each cell in a row).
+    # @param surrounding_spaces_need_quotes Whether spaces surrounding a cell need quotes in
+    # order to be preserved. The default value is false (quotes aren't required). 
+    # @param ignore_empty_lines Whether empty lines (i.e. containing only end of line symbols)
+    # are ignored. The default value is true (empty lines are ignored).
+    # @param format Format of result, list, map, vector.
     #---------------------------------------------------------------------------------------
     
     def initialize(filename,
@@ -57,7 +68,7 @@ class Jcsv
                    default_filter: Jcsv.optional,
                    headers: false,
                    ignore_empty_lines: true,
-                   type: :list,
+                   format: :list,
                    surrounding_space_need_quotes: false,
                    quote_char: "\"",
                    chunk_size: 1)
@@ -69,7 +80,7 @@ class Jcsv
       @default_filter = default_filter
       @headers = headers
       @ignore_empty_lines = ignore_empty_lines
-      @type = type
+      @format = format
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
       @chunk_size = chunk_size
@@ -95,7 +106,7 @@ class Jcsv
     end
 
     #---------------------------------------------------------------------------------------
-    #
+    # read the whole file at once if no block given
     #---------------------------------------------------------------------------------------
     
     def read(&block)
@@ -214,3 +225,4 @@ end
 
 require_relative 'list_reader'
 require_relative 'map_reader'
+require_relative 'vector_reader'

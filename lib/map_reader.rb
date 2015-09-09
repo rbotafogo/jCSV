@@ -92,19 +92,6 @@ class Jcsv
     def format(chunk)
       chunk
     end
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-=begin    
-    def parse_with_block(&block)
-      
-      while ((row = @reader.read(@column_mapping, @filters)) != nil)
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), row, @headers)
-      end
-      
-    end
-=end
     
   end
 
