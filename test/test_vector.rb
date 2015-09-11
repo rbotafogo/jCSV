@@ -23,6 +23,8 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
+require 'matrix'
+require 'mdarray'
 
 require_relative '../config'
 
@@ -44,8 +46,12 @@ class CSVTest < Test::Unit::TestCase
     should "parse a csv file to a vector" do
 
       reader = Jcsv.reader("epilepsy.csv", headers: true, format: :vector, type: :double,
-                           dimensions: ["patient"])
-      reader.read
+                           dimensions: ["patient", :treatment])
+      reader.mapping = {:treatment => false}
+      vector = reader.read
+      # p vector
+      array = MDArray.int(*vector)
+      array.print
       
     end
   end

@@ -102,6 +102,7 @@ class Jcsv
       # if headers then read them and initialize the @column_mapping the same as the
       # headers
       @headers = @reader.getHeader(true).to_a if @headers
+      init_filters
       
     end
 
@@ -138,21 +139,37 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
+    # Initialize filters with the default_filter.  Only possible if the file has headers.
+    #---------------------------------------------------------------------------------------
+
+    def init_filters
+
+      @filters = Hash.new
+
+      if (@headers)
+        # set all column filters to the @default_filter
+        @headers.each do |column_name|
+          @filters[column_name] = @default_filter
+        end
+      end
+      
+    end
+    
+    #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
     
     def filters=(filters)
-      
-      @filters = Hash.new
-      
+            
       case filters
       when Hash
         if (@headers)
+=begin
           # set all column filters to the @default_filter
           @headers.each do |column_name|
             @filters[column_name] = @default_filter
           end
-          
+=end          
           filters.each do |column_name, processor|
             column_name = column_name.to_s if column_name.is_a? Symbol
             @filters[column_name] = processor

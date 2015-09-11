@@ -66,18 +66,12 @@ class Jcsv
       buffer = Array.new
       lines = 0
 
-      # in this case, headers are required!  Should be improved
-      columns = @headers.size
-      
       raise "Reading into a vector does not support block" if block_given?
       parse_with_block do |line_no, row_no, row, headers|
-        p row
+        buffer.concat(row)
+        # buffer << row
 
-        lines += 1
-        if (row.size != columns)
-          raise "Missing columns in row: #{row}"
-        end
-        
+        lines = row_no
         # delete dimensions from data and store them on their proper dimension
         # WRONG!!! Should use index instead of name
         @dimensions_names.each do |name|
@@ -85,6 +79,8 @@ class Jcsv
         end
         
       end
+
+      [[lines-1, headers.size-1], buffer]
       
     end
 
