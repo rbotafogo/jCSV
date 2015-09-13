@@ -39,7 +39,6 @@ class Jcsv
       type = params[1].delete(:type)
       # creating default double... need to make it the proper type
       params[1][:default_filter] = Jcsv.int
-      
       super(*params)
 
     end
@@ -62,7 +61,11 @@ class Jcsv
         
       end
 
-      [[lines-1, headers.size-1], buffer]
+      p @reader.dimensions.shape
+      # p @reader.dimensions.dimensions[:patient]
+ 
+      # [[lines-1, headers.size-1], buffer]
+      buffer
       
     end
 

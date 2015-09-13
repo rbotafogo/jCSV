@@ -46,15 +46,15 @@ class CSVTest < Test::Unit::TestCase
     should "parse a csv file to a vector" do
 
       reader = Jcsv.reader("epilepsy.csv", headers: true, format: :vector, type: :double,
-                           dimensions: ["patient", :treatment])
-      reader.mapping = {:patient=> true, :treatment => true}
+                           dimensions: ["subject", :period])
+      reader.mapping = {:subject=> true, :period => true, :treatment => false}
       vector = reader.read
 
-      p reader.dimensions
-      
       # p vector
-      array = MDArray.int(*vector)
+      array = MDArray.int([59, 4, 4], vector)
       array.print
+      
+      # array[reader[:subject => 1, :period => 2]]
       
     end
   end

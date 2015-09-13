@@ -32,6 +32,7 @@ class Jcsv
   class Dimension
 
     attr_reader :frozen
+    attr_reader :current_value
     attr_reader :next_value
     attr_reader :labels
     attr_accessor :index     # column index of this dimension in the csv file
@@ -40,7 +41,8 @@ class Jcsv
     #
     #------------------------------------------------------------------------------------
 
-    def initialize
+    def initialize(dim_name)
+      @name = dim_name
       @frozen = false
       @next_value = 0
       @max_value = 0
@@ -80,7 +82,7 @@ class Jcsv
       else
         # p "label: #{label}"
         # Trying to add a label when the dimension is frozen raises an exception
-        raise "Dimension is frozen.  Check order of input data" if frozen
+        raise "Dimension '#{@name}' is frozen.  Cannot add label '#{label}'." if frozen
         
         @current_value = @labels[label] = @next_value
         @next_value += 1
@@ -127,8 +129,9 @@ class Jcsv
 
   class Dimensions
 
+    attr_reader :dimensions_names
     attr_reader :dimensions
-    attr_reader :size
+    attr_reader :rank
     
     #------------------------------------------------------------------------------------
     # dimensions is an array of column names that will be used as dimensions
@@ -137,13 +140,45 @@ class Jcsv
     def initialize(dimensions_names)
 
       @dimensions_names = dimensions_names
-      @size = @dimensions_names.size
+      @rank = @dimensions_names.size
       @dimensions = Hash.new
       
       @dimensions_names.each do |dim_name|
-        @dimensions[dim_name] = Dimension.new
+        @dimensions[dim_name] = Dimension.new(dim_name)
       end
 
+    end
+
+    #------------------------------------------------------------------------------------
+    #
+    #------------------------------------------------------------------------------------
+
+    def length(dim_name)
+      @dimensions[dim_name].labels.size
+    end
+
+    alias :size :length
+    
+    #------------------------------------------------------------------------------------
+    #
+    #------------------------------------------------------------------------------------
+
+    def labels(dim_name)
+      @dimensions[dim_name].labels
+    end
+    
+    #------------------------------------------------------------------------------------
+    #
+    #------------------------------------------------------------------------------------
+
+    def shape
+      
+      sh = Array.new
+      @dimensions_names.each do |dim_name|
+        sh << length(dim_name)
+      end
+      sh
+      
     end
 
     #------------------------------------------------------------------------------------
@@ -154,11 +189,13 @@ class Jcsv
 
       should_reset = @dimensions[dim_name].add_label(label)
 
+      @dimensions[dim_name].reset if should_reset
+=begin
       (@dimensions_names.index(dim_name)...@size).each do |i|
         name = @dimensions_names[i]
         @dimensions[name].reset
       end if should_reset
-      
+=end      
     end
     
     #------------------------------------------------------------------------------------
