@@ -47,8 +47,11 @@ class CSVTest < Test::Unit::TestCase
 
       reader = Jcsv.reader("epilepsy.csv", headers: true, format: :vector, type: :double,
                            dimensions: ["patient", :treatment])
-      reader.mapping = {:treatment => false}
+      reader.mapping = {:patient=> true, :treatment => true}
       vector = reader.read
+
+      p reader.dimensions
+      
       # p vector
       array = MDArray.int(*vector)
       array.print

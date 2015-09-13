@@ -21,6 +21,8 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+require_relative 'dimensions'
+
 class Jcsv
   include_package "org.supercsv.cellprocessor.ift"
 
@@ -57,7 +59,17 @@ class Jcsv
   module Processors
     include_package "org.supercsv.util"
     include_package "org.supercsv.exception"
+
+    attr_reader :dimensions
     
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def headers
+      @headers ||= getHeader(true).to_a
+    end
+
     #---------------------------------------------------------------------------------------
     # This method uses variable @processed_columns that should be initialized in the class
     # that includes this module. In the case of a list_reader for instance, processed_columns
@@ -70,14 +82,6 @@ class Jcsv
     def executeProcessors(processors)
 
       source = getColumns()
-
-      if processors.size == 0
-        source.each_with_index do |s, i|
-          next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
-          @processed_columns[@column_mapping[i]] = s
-        end
-        return @processed_columns
-      end
       
       context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
       context.setRowSource(source);
@@ -89,6 +93,12 @@ class Jcsv
 
         begin
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
+          # if column mapping is true, then this column is a dimension.
+          if (@column_mapping[i] == true)
+            @dimensions[@headers[i].to_sym] = s
+            next
+          end
+          
           context.setColumnNumber(i + 1)
           if (i >= processors.size)
             @processed_columns[@column_mapping[i]] = s
@@ -96,7 +106,6 @@ class Jcsv
             if (processors[i] == nil)
               @processed_columns[@column_mapping[i]] = s
             else
-              # p "#{i}: #{processors[i]}"
               cell = processors[i].execute(s, context)
               cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
               @processed_columns[@column_mapping[i]] = cell
@@ -121,7 +130,16 @@ class Jcsv
   class CLR < org.supercsv.io.CsvListReader
     include_package "org.supercsv.cellprocessor.ift"
     include Processors
-    
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def initialize(filereader, preferences, dimensions = nil)
+      @dimensions = dimensions
+      super(filereader, preferences)
+    end
+
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -153,6 +171,15 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
+    def initialize(filereader, preferences, dimensions = nil)
+      @dimensions = dimensions
+      super(filereader, preferences)
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
     def read(column_mapping, filters)
 
       # initialize @processed_columns to a new Hash.  This will be used by method
@@ -177,35 +204,3 @@ class Jcsv
   
 end
 
-=begin
-        processedColumns = Hash.new
-        
-        source = getColumns()
-        raise "Processos should not be null" if processors == nil
-        context = CsvContext.new(getLineNumber(), getRowNumber(), 1);
-        context.setRowSource(source);
-        
-        raise "The number of columns to be processed #{source.size} must match the number of 
-CellProcessors #{processors.length}" if (source.size != processors.length)
-        
-        source.each_with_index do |s, i|
-          
-          begin
-            next if name_mapping[i] == nil
-            context.setColumnNumber(i + 1)
-            if (processors[i] == nil)
-              processedColumns[name_mapping[i].to_sym] = s
-            else
-              cell = processors[i].execute(s, context)
-              cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
-              processedColumns[name_mapping[i].to_sym] = cell
-            end
-          rescue SuperCsvConstraintViolationException => e
-            raise "Contraint violation: #{context.toString}"
-          end
-          
-        end
-
-        return processedColumns
-
-=end

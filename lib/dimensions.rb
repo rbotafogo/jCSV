@@ -34,6 +34,7 @@ class Jcsv
     attr_reader :frozen
     attr_reader :next_value
     attr_reader :labels
+    attr_accessor :index     # column index of this dimension in the csv file
     
     #------------------------------------------------------------------------------------
     #

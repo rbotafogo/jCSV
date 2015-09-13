@@ -21,8 +21,6 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
-require_relative 'dimensions'
-
 class Jcsv
 
   #========================================================================================
@@ -38,23 +36,12 @@ class Jcsv
 
     def initialize(*params)
 
-      # Get the dimensions on the file
-      @dimensions_names = params[1].delete(:dimensions)
-      p @dimensions_names
-      
-      if ((!@dimensions_names.nil?) && (@dimensions_names.size != 0))
-        @dimensions_names.map!{|x| x.downcase.to_sym } # unless params[:strings_as_keys] || options[:keep_original_headers]
-        @dimensions = Dimensions.new(@dimensions_names)
-      end
-
       type = params[1].delete(:type)
-
       # creating default double... need to make it the proper type
       params[1][:default_filter] = Jcsv.int
-      p params[1]
       
       super(*params)
-      
+
     end
     
     #---------------------------------------------------------------------------------------
@@ -68,15 +55,10 @@ class Jcsv
 
       raise "Reading into a vector does not support block" if block_given?
       parse_with_block do |line_no, row_no, row, headers|
+        
         buffer.concat(row)
         # buffer << row
-
         lines = row_no
-        # delete dimensions from data and store them on their proper dimension
-        # WRONG!!! Should use index instead of name
-        @dimensions_names.each do |name|
-          @dimensions[name] = row.delete(name)
-        end
         
       end
 
@@ -99,8 +81,6 @@ class Jcsv
   #------------------------------------------------------------------------------------
 
   def self.read_file(filename, options = {})
-
-
 
     table = SmarterCSV.process(filename, options) do |array|
       row = array[0]

@@ -48,7 +48,8 @@ class Jcsv
             @column_mapping.mapping[index] = i
             i += 1
           else
-            @column_mapping.mapping[index] = false
+            @column_mapping.mapping[index] =
+              ((map[column_name.to_sym] == true)? true : false)
           end
         end
       when Array
@@ -74,7 +75,7 @@ class Jcsv
     def new_reader(preferences)
 
       begin
-        @reader = CLR.new(FileReader.new(@filename), preferences)
+        @reader = CLR.new(FileReader.new(@filename), preferences, @dims)
       rescue java.io.IOException => e
         p e
       end

@@ -43,7 +43,7 @@ class CSVTest < Test::Unit::TestCase
 #=begin
     should "parse a csv file to map the quick way" do
 
-      reader = Jcsv.reader("customer.csv", type: :map, headers: true)
+      reader = Jcsv.reader("customer.csv", format: :map, headers: true)
       # map is an array of hashes
       map = reader.read
       # get customerNo of second row
@@ -61,7 +61,7 @@ class CSVTest < Test::Unit::TestCase
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
-      reader = Jcsv.reader("customer.csv", type: :map, headers: true, chunk_size: 2)
+      reader = Jcsv.reader("customer.csv", format: :map, headers: true, chunk_size: 2)
       map = reader.read
       # since chunk_size = 2, but we didn't pass a block to reader, we will get back
       # 1 array, with 2 arrays each with a chunk.  Every element of the internal arrays
@@ -80,7 +80,7 @@ class CSVTest < Test::Unit::TestCase
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
-      reader = Jcsv.reader("customer.csv", type: :map, default_filter: Jcsv.not_nil,
+      reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil,
                            headers: true)
 
       # Set numberOfKids and married as optional, otherwise an exception will be raised
@@ -119,7 +119,7 @@ class CSVTest < Test::Unit::TestCase
     should "raise exception if no header when reading map" do
 
       # Will raise an exception as reading a file as map requires the header
-      assert_raise ( RuntimeError ) { Jcsv.reader("customer.csv", type: :map) }
+      assert_raise ( RuntimeError ) { Jcsv.reader("customer.csv", format: :map) }
 
     end
 
@@ -129,7 +129,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "raise exception when filters are invalid" do
 
-      reader = Jcsv.reader("customer.csv", type: :map, default_filter: Jcsv.not_nil,
+      reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil,
                            headers: true)
       
       # Set numberOfKids and married as optional, otherwise an exception will be raised
@@ -153,7 +153,7 @@ class CSVTest < Test::Unit::TestCase
     should "Read file in chunks passing a block as iterator" do
       
       # Read chunks of the file.  In this case, we are breaking the file in chunks of two
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2, type: :map)
+      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2, format: :map)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),

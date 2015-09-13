@@ -21,6 +21,8 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+require_relative 'dimensions'
+
 class Jcsv
   
   #========================================================================================
@@ -71,7 +73,8 @@ class Jcsv
                    format: :list,
                    surrounding_space_need_quotes: false,
                    quote_char: "\"",
-                   chunk_size: 1)
+                   chunk_size: 1,
+                   dimensions: nil)
       
       @filename = filename
       @col_sep = col_sep
@@ -84,6 +87,7 @@ class Jcsv
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
       @chunk_size = chunk_size
+      @dimensions = dimensions
       
       @rows = nil
       @filters = false
@@ -94,14 +98,20 @@ class Jcsv
       @builder.skipComments(CommentMatches.new(comment_matches)) if comment_matches
       @builder.ignoreEmptyLines(ignore_empty_lines)
       @builder.surroundingSpacesNeedQuotes(surrounding_space_need_quotes)
+
+      # Prepare dimensions
+      if ((!@dimensions.nil?) && (@dimensions.size != 0))
+        @dimensions.map! {|x| x.downcase.to_sym } # unless params[:strings_as_keys] || options[:keep_original_headers]
+        @dims = Dimensions.new(@dimensions)
+      end
       
-      # create a new reader with the proper preferences
+      # create a new supercsv reader with the proper preferences
       new_reader(@builder.build)
 
       @column_mapping = Mapping.new
       # if headers then read them and initialize the @column_mapping the same as the
       # headers
-      @headers = @reader.getHeader(true).to_a if @headers
+      @headers = @reader.headers if @headers      
       init_filters
       
     end
@@ -164,12 +174,6 @@ class Jcsv
       case filters
       when Hash
         if (@headers)
-=begin
-          # set all column filters to the @default_filter
-          @headers.each do |column_name|
-            @filters[column_name] = @default_filter
-          end
-=end          
           filters.each do |column_name, processor|
             column_name = column_name.to_s if column_name.is_a? Symbol
             @filters[column_name] = processor
@@ -200,6 +204,10 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
+
+    def dimensions
+      @reader.dimensions
+    end
 
     private
     
