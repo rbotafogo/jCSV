@@ -60,11 +60,7 @@ class Jcsv
         lines = row_no
         
       end
-
-      p @reader.dimensions.shape
-      # p @reader.dimensions.dimensions[:patient]
  
-      # [[lines-1, headers.size-1], buffer]
       buffer
       
     end

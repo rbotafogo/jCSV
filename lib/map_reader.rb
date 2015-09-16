@@ -78,7 +78,7 @@ class Jcsv
       begin
         # if there is a proper mapping should also work... FIX!!
         raise "Reading file as map requires headers." if !@headers
-        @reader = CMR.new(FileReader.new(@filename), preferences);
+        @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions);
       rescue java.io.IOException => e
         p e
       end

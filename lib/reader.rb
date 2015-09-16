@@ -33,20 +33,28 @@ class Jcsv
     include_package "org.supercsv.cellprocessor.ift"
     include_package "org.supercsv.prefs"
     include_package "org.supercsv.comment"
-    
+
+    # Reader configuration parameters
+    attr_reader :filename
     attr_reader :col_sep
     attr_reader :comment_starts
     attr_reader :comment_matches
     attr_reader :ignore_empty_lines
-    attr_reader :format
     attr_reader :surrounding_space_need_quotes
     attr_reader :quote_char
+    attr_reader :strings_as_keys
+    attr_reader :format             # output format: list, map, vector, others...
+    attr_reader :chunk_size
     
-    attr_reader :rows
     attr_reader :headers
-    attr_reader :mapping
-    attr_reader :processed_column   # last processed column
-    attr_reader :name_mapping
+    attr_reader :column_mapping
+    attr_reader :dimensions_names
+    
+    # last processed column
+    attr_reader :processed_column   
+
+    # Rows read.  Returned when reading a chunk of data
+    attr_reader :rows
 
     #---------------------------------------------------------------------------------------
     # Accepts the following options:
@@ -67,12 +75,13 @@ class Jcsv
                    col_sep: ",",
                    comment_starts: false,
                    comment_matches: false,
-                   default_filter: Jcsv.optional,
-                   headers: false,
                    ignore_empty_lines: true,
-                   format: :list,
                    surrounding_space_need_quotes: false,
                    quote_char: "\"",
+                   default_filter: Jcsv.optional,
+                   strings_as_keys: false,
+                   format: :list,
+                   headers: false,
                    chunk_size: 1,
                    dimensions: nil)
       
@@ -81,41 +90,34 @@ class Jcsv
       @comment_starts = comment_starts
       @comment_matches = comment_matches
       @default_filter = default_filter
+      @strings_as_keys = strings_as_keys
       @headers = headers
       @ignore_empty_lines = ignore_empty_lines
       @format = format
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
       @chunk_size = chunk_size
-      @dimensions = dimensions
+      @dimensions_names = dimensions
+
+      prepare_dimensions if dimensions
       
-      @rows = nil
-      @filters = false
-
-      # Prepare preferences
-      @builder = CsvPreference::Builder.new(quote_char.to_java(:char), col_sep.ord, "\n")
-      @builder.skipComments(CommentStartsWith.new(comment_starts)) if comment_starts
-      @builder.skipComments(CommentMatches.new(comment_matches)) if comment_matches
-      @builder.ignoreEmptyLines(ignore_empty_lines)
-      @builder.surroundingSpacesNeedQuotes(surrounding_space_need_quotes)
-
-      # Prepare dimensions
-      if ((!@dimensions.nil?) && (@dimensions.size != 0))
-        @dimensions.map! {|x| x.downcase.to_sym } # unless params[:strings_as_keys] || options[:keep_original_headers]
-        @dims = Dimensions.new(@dimensions)
-      end
+      # set all preferences.  To create a new reader we need to have the dimensions already
+      # prepared as this information will be sent to supercsv for processing.
+      new_reader(set_preferences)
       
-      # create a new supercsv reader with the proper preferences
-      new_reader(@builder.build)
+      # if headers then read them
+      @headers = @reader.headers if @headers
 
+      # if headers, then column_mapping can use headers to map; otherwise, we can only use
+      # position.
       @column_mapping = Mapping.new
-      # if headers then read them and initialize the @column_mapping the same as the
-      # headers
-      @headers = @reader.headers if @headers      
+      @rows = nil
+      
+      # initialize filters with the default filter
       init_filters
       
     end
-
+    
     #---------------------------------------------------------------------------------------
     # read the whole file at once if no block given
     #---------------------------------------------------------------------------------------
@@ -209,6 +211,10 @@ class Jcsv
       @reader.dimensions
     end
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
     private
     
     #---------------------------------------------------------------------------------------
@@ -244,6 +250,66 @@ class Jcsv
       
     end
     
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def set_preferences
+      
+      # Prepare preferences
+      builder = CsvPreference::Builder.new(@quote_char.to_java(:char), @col_sep.ord, "\n")
+      builder.skipComments(CommentStartsWith.new(@comment_starts)) if @comment_starts
+      builder.skipComments(CommentMatches.new(@comment_matches)) if @comment_matches
+      builder.ignoreEmptyLines(@ignore_empty_lines)
+      builder.surroundingSpacesNeedQuotes(@surrounding_space_need_quotes)
+      builder.build
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def prepare_headers
+      
+      # Read headers
+      @headers = @reader.headers if @headers
+
+      # Convert headers to symbols, unless user specifically does not want it
+      @headers.map! { |head| head.downcase.to_sym } unless @strings_as_keys
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def prepare_column_mapping
+
+      @column_mapping = Mapping.new
+      prepare_headers if @headers
+      
+    end
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def prepare_dimensions
+
+      if ((!@dimensions_names.nil?) && (@dimensions_names.size != 0))
+        @dimensions_names.map! { |x| x.downcase.to_sym } # unless params[:strings_as_keys] || options[:keep_original_headers]
+        @dimensions = Dimensions.new(@dimensions_names)
+      end
+      
+      # Build mapping for the dimensions: dimensions need to map to true
+      map = Hash.new
+      @dimensions.each do |dim|
+        map[dim.name] = true
+      end
+      
+    end
+
   end
   
 end

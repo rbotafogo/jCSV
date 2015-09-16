@@ -31,6 +31,7 @@ class Jcsv
   
   class Dimension
 
+    attr_reader :name
     attr_reader :frozen
     attr_reader :current_value
     attr_reader :next_value
@@ -190,12 +191,12 @@ class Jcsv
       should_reset = @dimensions[dim_name].add_label(label)
 
       @dimensions[dim_name].reset if should_reset
-=begin
-      (@dimensions_names.index(dim_name)...@size).each do |i|
+#=begin
+      (@dimensions_names.index(dim_name)...@dimensions_names.size).each do |i|
         name = @dimensions_names[i]
         @dimensions[name].reset
       end if should_reset
-=end      
+#=end      
     end
     
     #------------------------------------------------------------------------------------
@@ -222,6 +223,18 @@ class Jcsv
       @dimensions[name]
     end
 
+    #------------------------------------------------------------------------------------
+    #
+    #------------------------------------------------------------------------------------
+
+    def each
+      
+      @dimensions_names.each do |name|
+        yield @dimensions[name]
+      end
+      
+    end
+    
   end
 
 end

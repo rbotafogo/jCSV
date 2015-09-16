@@ -88,21 +88,11 @@ class Jcsv
       @reader = Jcsv::MapReader.new(*params)
     when :vector
       @reader = Jcsv::VectorReader.new(*params)
-    else :list
+    else
       @reader = Jcsv::ListReader.new(*params)
     end
     
   end
-
-=begin  
-  #---------------------------------------------------------------------------------------
-  #
-  #---------------------------------------------------------------------------------------
-
-  def read(&block)
-    @reader.read(&block)
-  end
-=end
 
   #---------------------------------------------------------------------------------------
   #

@@ -277,9 +277,14 @@ class CSVTest < Test::Unit::TestCase
                         "married" => Jcsv.optional(Jcsv.bool),
                         "customerNo" => Jcsv.int}
 
+      # Add mapping.  When column is mapped to false, it will not be retrieved from the
+      # file, improving time and spece efficiency
       reader.mapping = {:customerNo => false, :numberOfKids => false, :loyaltyPoints => false}
         
       reader.read do |line_no, row_no, chunk, headers|
+        # Bug!!!! Since there is a mapping that set columns to false, then we should only
+        # receive headers for the returned columns and not all columns!!!!
+        p headers
         # p chunk
       end
 
