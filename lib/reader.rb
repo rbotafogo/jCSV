@@ -44,7 +44,9 @@ class Jcsv
     attr_reader :quote_char
     attr_reader :strings_as_keys
     attr_reader :format             # output format: list, map, vector, others...
-    attr_reader :chunk_size
+
+    # chunk_size can be changed on the fly
+    attr_accessor :chunk_size
     
     attr_reader :headers
     attr_reader :column_mapping
@@ -104,18 +106,18 @@ class Jcsv
       # set all preferences.  To create a new reader we need to have the dimensions already
       # prepared as this information will be sent to supercsv for processing.
       new_reader(set_preferences)
+      # Convert headers to lower case symbols
+      prepare_headers if @headers
       
       # if headers then read them
-      @headers = @reader.headers if @headers
+      # @headers = @reader.headers if @headers
 
-      # if headers, then column_mapping can use headers to map; otherwise, we can only use
-      # position.
-      @column_mapping = Mapping.new
-      @rows = nil
-      
       # initialize filters with the default filter
       init_filters
-      
+
+      @column_mapping = Mapping.new
+      @rows = nil
+            
     end
     
     #---------------------------------------------------------------------------------------
@@ -172,12 +174,15 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     
     def filters=(filters)
-            
+
+      
       case filters
       when Hash
+        filters = filters.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo} unless
+          @strings_as_keys
         if (@headers)
           filters.each do |column_name, processor|
-            column_name = column_name.to_s if column_name.is_a? Symbol
+            # column_name = column_name.to_s if column_name.is_a? Symbol
             @filters[column_name] = processor
           end
         else
@@ -222,18 +227,20 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def read_chunk
-
+      
       return @reader.read(@column_mapping, @filters) if @chunk_size == 1
+
+      # p "read_chunk with size: #{@chunk_size}"
       
       rows = Array.new
       (1..@chunk_size).each do |i|
         if ((row = @reader.read(@column_mapping, @filters)).nil?)
           break
         else
-          # rows << row.to_a
           rows << row
         end
       end
+      
       (rows.size == 0)? nil : rows
       
     end
@@ -271,23 +278,12 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def prepare_headers
-      
+
       # Read headers
-      @headers = @reader.headers if @headers
+      @headers = @reader.headers
 
       # Convert headers to symbols, unless user specifically does not want it
       @headers.map! { |head| head.downcase.to_sym } unless @strings_as_keys
-      
-    end
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def prepare_column_mapping
-
-      @column_mapping = Mapping.new
-      prepare_headers if @headers
       
     end
     

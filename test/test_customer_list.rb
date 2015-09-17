@@ -36,7 +36,7 @@ class CSVTest < Test::Unit::TestCase
 
     end
 
-#=begin
+=begin
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -50,12 +50,37 @@ class CSVTest < Test::Unit::TestCase
 
       # now read the whole csv file
       content = reader.read
+
+      # Headers are converted to symbol
+      assert_equal([:customerno, :firstname, :lastname, :birthdate, :mailingaddress,
+                    :married, :numberofkids, :favouritequote, :email, :loyaltypoints],
+                   reader.headers)
       
       assert_equal(["1", "John", "Dunbar", "13/06/1945",
                     "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
                     nil, nil, "\"May the Force be with you.\" - Star Wars",
                     "jdunbar@gmail.com", "0"], content[0])
 
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "leave headers as string" do
+
+      # Reads all rows in memory and return and array of arrays. Each line is stored in
+      # one array.  Data is stored in the 'rows' instance variable.
+      # Create the reader with the necessary parameters
+      reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
+
+      # now read the whole csv file
+      content = reader.read
+
+      assert_equal(["customerNo", "firstName", "lastName", "birthDate", "mailingAddress",
+                    "married", "numberOfKids", "favouriteQuote", "email", "loyaltyPoints"],
+                   reader.headers)
+      
     end
     
     #-------------------------------------------------------------------------------------
@@ -80,7 +105,7 @@ class CSVTest < Test::Unit::TestCase
                     nil, nil, "\"May the Force be with you.\" - Star Wars",
                     "jdunbar@gmail.com", "0"], content[1])
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -92,7 +117,7 @@ class CSVTest < Test::Unit::TestCase
       # false, then headers will be nil. Instead of
       # method foreach, one could also use method 'read' with a block.  'read' and
       # 'foreach' are identical. 
-      reader = Jcsv.reader("customer.csv", headers: true)
+      reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
       
       reader.read do |line_no, row_no, row, headers|
 
@@ -126,21 +151,23 @@ class CSVTest < Test::Unit::TestCase
       parser = Jcsv.reader("customer.csv", headers: true, default_filter: Jcsv.not_nil)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      parser.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-                        "married" => Jcsv.optional(Jcsv.bool),
-                        "customerNo" => Jcsv.int,
-                        "birthDate" => Jcsv.date("dd/MM/yyyy")}
-      
-      
+      parser.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+                        :married => Jcsv.optional(Jcsv.bool),
+                        :customerno => Jcsv.int,
+                        :birthdate => Jcsv.date("dd/MM/yyyy")}
       
       parser.read do |line_no, row_no, row, headers|
-        # p row
+
+        # First field is customer number, which is converted to int
+        assert_equal(1, row[0]) if row_no == 2
+        assert_equal("John", row[1]) if row_no == 2
+        # Field 5 is :married.  It is optional, so leaving it blank (nil) is ok.
+        assert_equal(nil, row[5]) if row_no == 2
+
         # notice that field married that was "Y" is now true. Number of kids is not "0",
         # but 0, customerNo is also and int
-        #assert_equal([3, "Alice", "Wunderland",
-        #              "08/08/1985", "One Microsoft Way\nRedmond, WA 98052-6399\nUnited States",
-        #              true, 0, "\"Play it, Sam. Play \"As Time Goes By.\"\" - Casablanca",
-        #              "throughthelookingglass@yahoo.com", "2255887799"], row) if row_no == 4
+        assert_equal(true, row[5]) if row_no == 3
+        
       end
       
     end
@@ -151,14 +178,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "Read file in chunks passing a block" do
       
-      # Read chunks of the file.  In this case, we are breaking the file in chunks of two
+      # Read chunks of the file.  In this case, we are breaking the file in chunks of 2
       reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-                        "married" => Jcsv.optional(Jcsv.bool),
-                        "customerNo" => Jcsv.int}
-      
+      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+                        :married => Jcsv.optional(Jcsv.bool),
+                        :customerno => Jcsv.int}
+
       reader.each do |line_no, row_no, chunk, headers|
 
         # line_no and row_no are the last read line_no and row_no of the chunk.  Since we
@@ -200,7 +227,7 @@ class CSVTest < Test::Unit::TestCase
       end
 
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -210,14 +237,15 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-                        "married" => Jcsv.optional(Jcsv.bool),
-                        "customerNo" => Jcsv.int}
+      # Add filters, so that we get 'objects' instead of strings for filtered fields
+      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+                        :married => Jcsv.optional(Jcsv.bool),
+                        :customerno => Jcsv.int}
 
       # Method each without a block returns an enumerator
       enum = reader.each
 
-      # read the first chunk
+      # read the first chunk.  Chunk is of size 2
       chunk = enum.next
 
       assert_equal(7, chunk[0])
@@ -237,7 +265,7 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( StopIteration ) { enum.next }
 
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -249,10 +277,14 @@ class CSVTest < Test::Unit::TestCase
       
       # Method each without a block returns an enumerator
       enum = reader.each
-      # read first chunk
+      
+      # read first chunk.  Does nothing with the data.
       enum.next
+      
+      
       # read second chunk... only one row will be returned
       chunk = enum.next
+      
       # assert_equal()
       assert_equal([["4", "Bill", "Jobs", "10/07/1973",
                      "2701 San Tomas Expressway\nSanta Clara, CA 95050\nUnited States", "Y", "3",
@@ -263,7 +295,9 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( StopIteration ) { enum.next }
 
     end
-
+=end
+    
+=begin    
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -272,25 +306,39 @@ class CSVTest < Test::Unit::TestCase
       
       reader = Jcsv.reader("customer.csv", headers: true)
 
-      # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
-                        "married" => Jcsv.optional(Jcsv.bool),
-                        "customerNo" => Jcsv.int}
-
       # Add mapping.  When column is mapped to false, it will not be retrieved from the
-      # file, improving time and spece efficiency
-      reader.mapping = {:customerNo => false, :numberOfKids => false, :loyaltyPoints => false}
+      # file, improving time and speed efficiency
+      reader.mapping = {:customerno => false, :numberofkids => false, :loyaltypoints => false}
         
       reader.read do |line_no, row_no, chunk, headers|
         # Bug!!!! Since there is a mapping that set columns to false, then we should only
         # receive headers for the returned columns and not all columns!!!!
-        p headers
-        # p chunk
+        p chunk
+      end
+
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "Read file skipping columns, keep strings as key" do
+      
+      reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
+
+      # Add mapping.  When column is mapped to false, it will not be retrieved from the
+      # file, improving time and speed efficiency
+      reader.mapping = {"customerNo" => false, "numberOfKids" => false, "loyaltyPoints" => false}
+        
+      reader.read do |line_no, row_no, chunk, headers|
+        # Bug!!!! Since there is a mapping that set columns to false, then we should only
+        # receive headers for the returned columns and not all columns!!!!
+        p chunk
       end
 
 
     end
-#=end
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -315,12 +363,46 @@ class CSVTest < Test::Unit::TestCase
       reader.mapping = [2, 0, false, 3, false, false, false, false, 1]
         
       reader.read do |line_no, row_no, chunk, headers|
-        p chunk
+        assert_equal(false, headers)
+        assert_equal("John", chunk[0][0]) if row_no == 2
+        assert_equal("Alice", chunk[0][0]) if row_no == 3
       end
 
-
     end
-    
+=end    
   end
 
 end
+
+
+=begin
+    #-------------------------------------------------------------------------------------
+    # JRuby fiber seems to have a bug.  Don't know if only JRuby fiber or fibers in 
+    # general.  When returning the first element the second is also retrieved (look
+    # forward: might be a reason, but prevents changing the behaviour in between calls to
+    # next.
+    #-------------------------------------------------------------------------------------
+
+    should "allow changing parameters in between reads" do
+      
+      # Start with chunk_size 1
+      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 1)
+      
+      # Method each without a block returns an enumerator
+      enum = reader.each
+      
+      # read first chunk.  Does nothing with the data. Got only one line of data
+      p enum.next
+
+      # change chunk_size to 2
+      reader.chunk_size = 2
+      
+      # read second chunk... only one row will be returned
+      chunk = enum.next
+      p chunk
+      # assert_equal()
+
+      p enum.next
+      
+    end
+=end

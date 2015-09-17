@@ -182,6 +182,9 @@ class Jcsv
 
     def read(column_mapping, filters)
 
+      p column_mapping
+      p filters
+      
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors
       @processed_columns = Hash.new
