@@ -23,8 +23,6 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-require 'matrix'
-require 'mdarray'
 
 require_relative '../config'
 
@@ -37,23 +35,40 @@ class CSVTest < Test::Unit::TestCase
     setup do
 
     end
-
-#=begin
+    
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 
-    should "parse a csv file to a vector" do
+    should "parse a csv file the quick way without headers" do
+        
+      # Setting headers to false, will read the header as a normal line
+      reader = Jcsv.reader("customer.csv", headers: false)
 
-      reader = Jcsv.reader("epilepsy.csv", headers: true, format: :vector, type: :double,
-                           dimensions: ["subject", :period])
-      reader.mapping = {:treatment => false}
-      vector = reader.read
+      # read the whole file in one piece.
+      content = reader.read
 
-      # p vector
-      array = MDArray.int([59, 4, 4], vector)
-      array.print
+      # The first line now is the header, since we've set 
+      assert_equal(["customerNo", "firstName", "lastName", "birthDate",
+                    "mailingAddress", "married", "numberOfKids", "favouriteQuote",
+                    "email", "loyaltyPoints"], content[0])
+
+      assert_equal(["1", "John", "Dunbar", "13/06/1945",
+                    "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
+                    nil, nil, "\"May the Force be with you.\" - Star Wars",
+                    "jdunbar@gmail.com", "0"], content[1])
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "Check case without header and mapping as a hash" do
+
+      # THIS WILL PROBABLY BREAK!!!!!!!!!!!!!11
       
     end
+
   end
+
 end

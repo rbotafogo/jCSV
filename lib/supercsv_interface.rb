@@ -95,7 +95,8 @@ class Jcsv
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
           # if column mapping is true, then this column is a dimension.
           if (@column_mapping[i] == true)
-            @dimensions[@headers[i].to_sym] = s
+            # @dimensions[@headers[i].to_sym] = s
+            @dimensions[@headers[i]] = s            
             next
           end
           
@@ -182,8 +183,7 @@ class Jcsv
 
     def read(column_mapping, filters)
 
-      p column_mapping
-      p filters
+      p @column_mapping
       
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors

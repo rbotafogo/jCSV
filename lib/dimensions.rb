@@ -51,6 +51,16 @@ class Jcsv
     end
 
     #------------------------------------------------------------------------------------
+    #
+    #------------------------------------------------------------------------------------
+
+    def size
+      @labels.size
+    end
+
+    alias :length :size
+    
+    #------------------------------------------------------------------------------------
     # Adds a new label to this dimension and keeps track of its index.  Labels are
     # indexed starting at 0 and always incrementing.  All labels in the dimension are
     # distinct. If trying to add a label that already exists, will:

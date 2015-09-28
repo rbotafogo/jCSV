@@ -40,11 +40,13 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    # Maps columns to the given names
+    # Maps columns to the given names.  In map reader, there is no column reordering, as
+    # this does not really make any sense, since one gets to the data through the key and
+    # not through its position in the array.
     #---------------------------------------------------------------------------------------
-
+    
     def mapping=(column_mapping)
-
+      
       map = Array.new
       
       @headers.each do |h|
@@ -59,10 +61,10 @@ class Jcsv
         # map << ((name_mapping[h].nil?)? h : name_mapping[h])
       end
       
-      @column_mapping = map
+      @column_mapping.map = map
       
     end
-
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -76,7 +78,6 @@ class Jcsv
     def new_reader(preferences)
       
       begin
-        # if there is a proper mapping should also work... FIX!!
         raise "Reading file as map requires headers." if !@headers
         @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions);
       rescue java.io.IOException => e

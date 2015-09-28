@@ -40,16 +40,16 @@ class CSVTest < Test::Unit::TestCase
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-#=begin
+
     should "parse a csv file to map the quick way" do
 
-      reader = Jcsv.reader("customer.csv", format: :map, headers: true)
+      reader = Jcsv.reader("customer.csv", format: :map)
       # map is an array of hashes
       map = reader.read
       # get customerNo of second row
-      assert_equal("2", map[1]["customerNo"])
+      assert_equal("2", map[1][:customerno])
       # loyaltyPoints from 4th row
-      assert_equal("36", map[3]["loyaltyPoints"])
+      assert_equal("36", map[3][:loyaltypoints])
       
     end
 
@@ -61,7 +61,7 @@ class CSVTest < Test::Unit::TestCase
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
-      reader = Jcsv.reader("customer.csv", format: :map, headers: true, chunk_size: 2)
+      reader = Jcsv.reader("customer.csv", format: :map, chunk_size: 2, strings_as_keys: true)
       map = reader.read
       # since chunk_size = 2, but we didn't pass a block to reader, we will get back
       # 1 array, with 2 arrays each with a chunk.  Every element of the internal arrays
@@ -71,47 +71,46 @@ class CSVTest < Test::Unit::TestCase
       assert_equal("2255887799", map[1][0]["loyaltyPoints"])
 
     end
-#=end
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-#=begin
+
     should "parse a csv file to map" do
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
-      reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil,
-                           headers: true)
+      reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil)
 
       # Set numberOfKids and married as optional, otherwise an exception will be raised
-      reader.filters = {:numberOfKids => Jcsv.optional(Jcsv.int),
+      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :loyaltyPoints => Jcsv.long,
-                        :customerNo => Jcsv.int,
-                        "birthDate" => Jcsv.date("dd/MM/yyyy")}
+                        :loyaltypoints => Jcsv.long,
+                        :customerno => Jcsv.int,
+                        :birthdate => Jcsv.date("dd/MM/yyyy")}
 
       # When parsing to map, it is possible to make a mapping. If column name is :false
       # the column will be removed from the returned row
-      reader.mapping = {"numberOfKids" => :numero_criancas,
-                        "married" => "casado",
-                        "loyaltyPoints" => "pontos fidelidade",
-                        "customerNo" => :false}
+      reader.mapping = {:numberofkids => :numero_criancas,
+                        :married => "casado",
+                        :loyaltypoints => "pontos fidelidade",
+                        :customerno => :false}
 
       reader.read do |line_no, row_no, row, headers|
         if (row_no == 5)
-          assert_equal("Bill", row["firstName"])
+          assert_equal(nil, row[:customerno])
+          assert_equal("Bill", row[:firstname])
           assert_equal(true, row["casado"])
-          assert_equal("1973-07-10 00:00:00 -0300", row["birthDate"].to_s)
+          assert_equal("1973-07-10 00:00:00 -0300", row[:birthdate].to_s)
           assert_equal("2701 San Tomas Expressway\nSanta Clara, CA 95050\nUnited States",
-                       row["mailingAddress"])
+                       row[:mailingaddress])
           assert_equal(3, row[:numero_criancas])
         end
         
       end
 
     end
-
-#=begin
+    
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -119,7 +118,8 @@ class CSVTest < Test::Unit::TestCase
     should "raise exception if no header when reading map" do
 
       # Will raise an exception as reading a file as map requires the header
-      assert_raise ( RuntimeError ) { Jcsv.reader("customer.csv", format: :map) }
+      assert_raise ( RuntimeError ) { Jcsv.reader("customer.csv", format: :map,
+                                                  headers: false) }
 
     end
 
@@ -130,7 +130,7 @@ class CSVTest < Test::Unit::TestCase
     should "raise exception when filters are invalid" do
 
       reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil,
-                           headers: true)
+                           headers: true, strings_as_keys: true)
       
       # Set numberOfKids and married as optional, otherwise an exception will be raised
       reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
@@ -144,7 +144,6 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( RuntimeError ) { reader.read { |line_no, row_no, row, headers| } }
       
     end
-#=end
 
     #-------------------------------------------------------------------------------------
     #
@@ -153,7 +152,8 @@ class CSVTest < Test::Unit::TestCase
     should "Read file in chunks passing a block as iterator" do
       
       # Read chunks of the file.  In this case, we are breaking the file in chunks of two
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2, format: :map)
+      reader = Jcsv.reader("customer.csv", chunk_size: 2, format: :map,
+                           strings_as_keys: true)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),

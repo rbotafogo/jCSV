@@ -53,14 +53,17 @@ class Jcsv
       lines = 0
 
       raise "Reading into a vector does not support block" if block_given?
+      
       parse_with_block do |line_no, row_no, row, headers|
-        
         buffer.concat(row)
         # buffer << row
         lines = row_no
-        
       end
- 
+
+      @dimensions_names.each do |dim|
+        p @dimensions[dim].size
+      end
+      
       buffer
       
     end
@@ -72,52 +75,6 @@ class Jcsv
     def each(&block)
       raise "Reading into a vector does not support each"
     end
-    
-  end
-  
-  #------------------------------------------------------------------------------------
-  #
-  #------------------------------------------------------------------------------------
-
-  def self.read_file(filename, options = {})
-
-    table = SmarterCSV.process(filename, options) do |array|
-      row = array[0]
-      headers ||= row.keys
-      # columns is initialized with the first row.size
-      columns ||= row.size
-      
-      lines += 1
-      # every row should have the same number of columns
-      if (row.size != columns)
-        raise "Data does not have the same number of columns for all lines"
-      end
-
-      # delete dimensions from data and store them on their proper dimension
-      dimensions_names.each do |name|
-        dimensions[name] = row.delete(name)
-      end
-      
-      row.each_pair do |key, val|
-        # if it is a Date, then convert it to seconds since epoch
-        p key
-        p val
-        # if (Date.parse(val))
-          #buffer << val.to_time.to_i
-          # if it is numeric then just add it to the buffer
-        if (val.is_a? Numeric)
-          buffer << val
-        #else
-         # raise "Value must be either a 'date' or 'numeric': #{val}"
-        end
-        
-      end
-      
-    end
-
-    dimensions.dimensions["Columns"] = headers
-    p dimensions.dimensions["Columns"]
-    p buffer
     
   end
   

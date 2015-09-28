@@ -26,6 +26,101 @@ require_relative 'dimensions'
 class Jcsv
   
   #========================================================================================
+  # 
+  #========================================================================================
+
+  module Header
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    def filters=(filters)
+      
+      case filters
+      when Hash
+        filters = filters.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo} unless
+          @strings_as_keys
+        filters.each do |column_name, processor|
+          # column_name = column_name.to_s if column_name.is_a? Symbol
+          @filters[column_name] = processor
+        end
+      when Array
+        raise "One filter needed for each column.  Filters size: #{filters.size}" if
+          headers.size != filters.size
+        filters.each_with_index do |processor, i|
+          @filters[i] = processor
+        end
+      else
+        raise "Filters parameters should either be a hash or an array of filters"
+      end
+      
+    end
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    def parse_with_block(&block)
+
+      # if there is a valid column_mapping, then we need to change the mapped_header
+      mapped_header = @headers
+      if (@column_mapping.mapping)
+        mapped_header = Array.new
+        @column_mapping.mapping.each_with_index do |map, index|
+          mapped_header[map] = @headers[index] if (map.is_a? Numeric)
+        end
+      end
+      
+      while (!((chunk = read_chunk).nil?))
+        block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk),
+                   mapped_header)
+      end
+      
+    end
+    
+  end
+  
+  #========================================================================================
+  # 
+  #========================================================================================
+
+  module Headerless
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    def filters=(filters)
+      
+      case filters
+      when Hash
+        raise "CSV file does not have headers.  Cannot match filters with headers"
+      when Array
+        filters.each_with_index do |processor, i|
+          @filters[i] = processor
+        end
+      else
+        raise "Filters parameters should either be a hash or an array of filters"
+      end
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+    
+    def parse_with_block(&block)
+      
+      while (!((chunk = read_chunk).nil?))
+        block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk), nil)
+      end
+
+    end
+    
+  end
+  
+  #========================================================================================
   #
   #========================================================================================
   
@@ -83,7 +178,7 @@ class Jcsv
                    default_filter: Jcsv.optional,
                    strings_as_keys: false,
                    format: :list,
-                   headers: false,
+                   headers: true,
                    chunk_size: 1,
                    dimensions: nil)
       
@@ -92,6 +187,7 @@ class Jcsv
       @comment_starts = comment_starts
       @comment_matches = comment_matches
       @default_filter = default_filter
+      @filters = false
       @strings_as_keys = strings_as_keys
       @headers = headers
       @ignore_empty_lines = ignore_empty_lines
@@ -100,23 +196,29 @@ class Jcsv
       @quote_char = quote_char
       @chunk_size = chunk_size
       @dimensions_names = dimensions
+      @column_mapping = Mapping.new
+      @rows = nil
+      # When having dimensions, mapping= can only be called internally and not by
+      # the user.  dim_set controls this setting
+      @dim_set = false
 
       prepare_dimensions if dimensions
-      
+
       # set all preferences.  To create a new reader we need to have the dimensions already
       # prepared as this information will be sent to supercsv for processing.
       new_reader(set_preferences)
-      # Convert headers to lower case symbols
-      prepare_headers if @headers
-      
-      # if headers then read them
-      # @headers = @reader.headers if @headers
 
-      # initialize filters with the default filter
-      init_filters
+      # Dynamic class change without writing subclasses. When headers, extend this class
+      # with methods that assume there is a header, when no headers, then extend this class
+      # with methods that know there is no header.  Could have being done with subclasses,
+      # but this would all subclasses to have two subclasses one inheriting from the header
+      # class and one inheriting from the headerless classes.  In this way we reduce the
+      # subclasses need.
+      @headers? prepare_headers : headerless
 
-      @column_mapping = Mapping.new
-      @rows = nil
+      # if there are dimensions, then we need to prepare the mappings accordingly.  With
+      # dimensions defined, users cannot defined mappings.
+      dimensions_mappings if dimensions
             
     end
     
@@ -125,7 +227,7 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     
     def read(&block)
-
+      
       if (!block_given?)
         @rows = Array.new
         parse_with_block do |line_no, row_no, row, headers|
@@ -153,58 +255,11 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    # Initialize filters with the default_filter.  Only possible if the file has headers.
-    #---------------------------------------------------------------------------------------
-
-    def init_filters
-
-      @filters = Hash.new
-
-      if (@headers)
-        # set all column filters to the @default_filter
-        @headers.each do |column_name|
-          @filters[column_name] = @default_filter
-        end
-      end
-      
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def filters=(filters)
-
-      
-      case filters
-      when Hash
-        filters = filters.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo} unless
-          @strings_as_keys
-        if (@headers)
-          filters.each do |column_name, processor|
-            # column_name = column_name.to_s if column_name.is_a? Symbol
-            @filters[column_name] = processor
-          end
-        else
-          raise "CSV file does not have headers.  Cannot match filters with headers"
-        end
-      when Array
-        raise "One filter needed for each column.  Filters size: #{filters.size}" if
-          headers && (headers.size != filters.size)
-        filters.each_with_index do |processor, i|
-          @filters[i] = processor
-        end
-      else
-        raise "Filters parameters should either be a hash or an array of filters"
-      end
-      
-    end
-    
-    #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
 
     def mapping=(map)
+      raise "Mapping is not allowed when 'dimensions' are defined" if dimensions
       @column_mapping.map = map
     end
 
@@ -227,11 +282,9 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def read_chunk
-      
+
       return @reader.read(@column_mapping, @filters) if @chunk_size == 1
 
-      # p "read_chunk with size: #{@chunk_size}"
-      
       rows = Array.new
       (1..@chunk_size).each do |i|
         if ((row = @reader.read(@column_mapping, @filters)).nil?)
@@ -242,18 +295,6 @@ class Jcsv
       end
       
       (rows.size == 0)? nil : rows
-      
-    end
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-    
-    def parse_with_block(&block)
-
-      while (!((chunk = read_chunk).nil?))
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk), @headers)
-      end
       
     end
     
@@ -274,17 +315,45 @@ class Jcsv
     end
 
     #---------------------------------------------------------------------------------------
+    # Initialize filters with the default_filter.  Only possible if the file has headers.
+    #---------------------------------------------------------------------------------------
+
+    def init_filters
+
+      @filters = Hash.new
+
+      # set all column filters to the @default_filter
+      @headers.each do |column_name|
+        @filters[column_name] = @default_filter
+      end
+      
+    end
+    
+    #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
 
     def prepare_headers
 
+      extend Header
+      
       # Read headers
       @headers = @reader.headers
 
       # Convert headers to symbols, unless user specifically does not want it
       @headers.map! { |head| head.downcase.to_sym } unless @strings_as_keys
+
+      # initialize filters with the default filter
+      init_filters
       
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def headerless
+      extend Headerless
     end
     
     #---------------------------------------------------------------------------------------
@@ -294,18 +363,28 @@ class Jcsv
     def prepare_dimensions
 
       if ((!@dimensions_names.nil?) && (@dimensions_names.size != 0))
-        @dimensions_names.map! { |x| x.downcase.to_sym } # unless params[:strings_as_keys] || options[:keep_original_headers]
+        # || options[:keep_original_headers]
+        @dimensions_names.map! { |x| x.downcase.to_sym } unless @strings_as_keys 
         @dimensions = Dimensions.new(@dimensions_names)
       end
+            
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def dimensions_mappings
       
       # Build mapping for the dimensions: dimensions need to map to true
       map = Hash.new
       @dimensions.each do |dim|
         map[dim.name] = true
       end
+      self.mapping = map
       
     end
-
+    
   end
   
 end

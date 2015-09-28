@@ -36,7 +36,7 @@ class CSVTest < Test::Unit::TestCase
 
     end
 
-=begin
+#=begin
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -45,8 +45,8 @@ class CSVTest < Test::Unit::TestCase
 
       # Reads all rows in memory and return and array of arrays. Each line is stored in
       # one array.  Data is stored in the 'rows' instance variable.
-      # Create the reader with the necessary parameters
-      reader = Jcsv.reader("customer.csv", headers: true)
+      # Create the reader with all default parameters.
+      reader = Jcsv.reader("customer.csv")
 
       # now read the whole csv file
       content = reader.read
@@ -72,7 +72,7 @@ class CSVTest < Test::Unit::TestCase
       # Reads all rows in memory and return and array of arrays. Each line is stored in
       # one array.  Data is stored in the 'rows' instance variable.
       # Create the reader with the necessary parameters
-      reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
+      reader = Jcsv.reader("customer.csv", strings_as_keys: true)
 
       # now read the whole csv file
       content = reader.read
@@ -83,29 +83,6 @@ class CSVTest < Test::Unit::TestCase
       
     end
     
-    #-------------------------------------------------------------------------------------
-    #
-    #-------------------------------------------------------------------------------------
-
-    should "parse a csv file the quick way without headers" do
-        
-      # Setting headers to false, will read the header as a normal line
-      reader = Jcsv.reader("customer.csv", headers: false)
-
-      # read the whole file in one piece.
-      content = reader.read
-
-      # The first line now is the header, since we've set 
-      assert_equal(["customerNo", "firstName", "lastName", "birthDate",
-                    "mailingAddress", "married", "numberOfKids", "favouriteQuote",
-                    "email", "loyaltyPoints"], content[0])
-
-      assert_equal(["1", "John", "Dunbar", "13/06/1945",
-                    "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
-                    nil, nil, "\"May the Force be with you.\" - Star Wars",
-                    "jdunbar@gmail.com", "0"], content[1])
-    end
-
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -148,7 +125,7 @@ class CSVTest < Test::Unit::TestCase
       # Add filters, to filter the columns according to given rules. numberOfKids is
       # optional and should be converted to and int.  married is optional and should be
       # converted to a boolean
-      parser = Jcsv.reader("customer.csv", headers: true, default_filter: Jcsv.not_nil)
+      parser = Jcsv.reader("customer.csv", default_filter: Jcsv.not_nil)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       parser.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
@@ -179,7 +156,7 @@ class CSVTest < Test::Unit::TestCase
     should "Read file in chunks passing a block" do
       
       # Read chunks of the file.  In this case, we are breaking the file in chunks of 2
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2)
+      reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
@@ -200,10 +177,19 @@ class CSVTest < Test::Unit::TestCase
                        "bobdown@hotmail.com", "123456"]], chunk) if row_no == 3
       end
 
+    end
+
+    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "Read file in chunks, last chunk smaller" do
+
       # Read chunks of the file.  In this case, we are breaking the file in chunks of 3.
       # Since we only have 4 rows, the first chunk will have 3 rows and the second chunk
       # will have 1 row
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 3)
+      reader = Jcsv.reader("customer.csv", chunk_size: 3)
 
       enum = reader.each do |line_no, row_no, chunk, headers|
         assert_equal([["1", "John", "Dunbar", "13/06/1945",
@@ -234,7 +220,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "Read file in chunks as enumerator" do
       
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 2)
+      reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       # Add filters, so that we get 'objects' instead of strings for filtered fields
@@ -273,7 +259,7 @@ class CSVTest < Test::Unit::TestCase
     should "Read file in chunks as enumerator... last chunk smaller" do
       
       # Same test with a chunk_size of 3
-      reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 3)
+      reader = Jcsv.reader("customer.csv", chunk_size: 3)
       
       # Method each without a block returns an enumerator
       enum = reader.each
@@ -295,47 +281,52 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( StopIteration ) { enum.next }
 
     end
-=end
-    
-=begin    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 
     should "Read file skipping columns" do
       
-      reader = Jcsv.reader("customer.csv", headers: true)
+      reader = Jcsv.reader("customer.csv")
 
       # Add mapping.  When column is mapped to false, it will not be retrieved from the
       # file, improving time and speed efficiency
       reader.mapping = {:customerno => false, :numberofkids => false, :loyaltypoints => false}
         
       reader.read do |line_no, row_no, chunk, headers|
-        # Bug!!!! Since there is a mapping that set columns to false, then we should only
-        # receive headers for the returned columns and not all columns!!!!
-        p chunk
+        assert_equal([:firstname, :lastname, :birthdate, :mailingaddress, :married,
+                      :favouritequote, :email], headers)
+        if (row_no == 2)
+          assert_equal("John", chunk[0])
+          assert_equal("Dunbar", chunk[1])
+        end
       end
 
     end
+#=end
 
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 
-    should "Read file skipping columns, keep strings as key" do
+    should "Read file skipping columns, with headers as string" do
       
-      reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
+      reader = Jcsv.reader("customer.csv", strings_as_keys: true)
 
       # Add mapping.  When column is mapped to false, it will not be retrieved from the
       # file, improving time and speed efficiency
-      reader.mapping = {"customerNo" => false, "numberOfKids" => false, "loyaltyPoints" => false}
+      reader.mapping = {"customerNo" => false, "numberOfKids" => false,
+                        "loyaltyPoints" => false}
         
       reader.read do |line_no, row_no, chunk, headers|
-        # Bug!!!! Since there is a mapping that set columns to false, then we should only
-        # receive headers for the returned columns and not all columns!!!!
-        p chunk
+        assert_equal(["firstName", "lastName", "birthDate", "mailingAddress", "married",
+                      "favouriteQuote", "email"], headers)
+        if (row_no == 2)
+          assert_equal("John", chunk[0])
+          assert_equal("Dunbar", chunk[1])
+        end
       end
-
 
     end
 
@@ -347,9 +338,41 @@ class CSVTest < Test::Unit::TestCase
 
       # Here we are setting headers to false, so the first line will not be considere
       # a header.
-      reader = Jcsv.reader("customer_nh.csv", headers: false, chunk_size: 2)
+      reader = Jcsv.reader("customer.csv", chunk_size: 2)
       # reading the headers returns false
-      assert_equal(false, reader.headers)
+      # assert_equal(false, reader.headers)
+
+      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+                        :married => Jcsv.optional(Jcsv.bool),
+                        :customerno => Jcsv.int}
+
+      # Mapping allows reordering of columns.  In this example, column 0 (:customerno)
+      # in the csv file will be loaded in position 2 (3rd column); column 1 (:firstname)
+      # in the csv file will be loaded in position 0 (1st column); column 2 on the csv file
+      # will not be loaded (false); column 4 (:birthdate) will be loaded on position 3,
+      # and so on.
+      # When reordering columns, care should be taken to get the mapping right or unexpected
+      # behaviour could result.
+      reader.mapping = {:customerno => 2, :firstname => 0, :lastname => false,
+                        :birthdate => 3, :mailingaddress => false, :married => false,
+                        :numberofkids => false, :favouritequote => false, :email => 1,
+                        :loyaltypoints => 4}
+        
+      reader.read do |line_no, row_no, chunk, headers|
+        assert_equal([:firstname, :email, :customerno, :birthdate, :loyaltypoints],
+                     headers)
+        assert_equal("John", chunk[0][0]) if row_no == 3
+        assert_equal("Alice", chunk[0][0]) if row_no == 5
+      end
+
+    end
+    
+  end
+
+end
+
+
+=begin
 
       # When there are no headers setting filters and mapping needs to be done 
       # using the columns position in the file.  Note that we can have specify fewer
@@ -357,25 +380,7 @@ class CSVTest < Test::Unit::TestCase
       # Filters for the first 4 columns, the other columns will not be filtered
       reader.filters = [Jcsv.optional, Jcsv.optional, Jcsv.int, Jcsv.date("dd/MM/yyyy")]
 
-      # Mapping allows reordering of columns.  In this example, column 2 will be in the
-      # 1st position, column 0 on the 2nd, column 3 will not show up, column 4 will
-      # be in the 3rd position, etc.
-      reader.mapping = [2, 0, false, 3, false, false, false, false, 1]
-        
-      reader.read do |line_no, row_no, chunk, headers|
-        assert_equal(false, headers)
-        assert_equal("John", chunk[0][0]) if row_no == 2
-        assert_equal("Alice", chunk[0][0]) if row_no == 3
-      end
 
-    end
-=end    
-  end
-
-end
-
-
-=begin
     #-------------------------------------------------------------------------------------
     # JRuby fiber seems to have a bug.  Don't know if only JRuby fiber or fibers in 
     # general.  When returning the first element the second is also retrieved (look

@@ -38,7 +38,19 @@ class CSVTest < Test::Unit::TestCase
 
     end
 
-#=begin
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "parse multi-dimension csv file to map" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, dimensions: [:subject, :period])
+      treatment = reader.read
+      p reader.dimensions
+      
+    end
+
+=begin
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -55,5 +67,9 @@ class CSVTest < Test::Unit::TestCase
       array.print
       
     end
+
+=end
+    
   end
+
 end

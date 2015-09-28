@@ -83,7 +83,9 @@ class Jcsv
 
   def self.reader(*params)
 
-    case params[1][:format]
+    format = params[1]? params[1][:format] : :list
+    
+    case format
     when :map
       @reader = Jcsv::MapReader.new(*params)
     when :vector
