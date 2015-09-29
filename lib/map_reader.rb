@@ -36,7 +36,8 @@ class Jcsv
 
     def initialize(*params)
       super(*params)
-      @column_mapping.map = @headers
+      @column_mapping.map = @headers if !@dimensions
+      # p @column_mapping
     end
     
     #---------------------------------------------------------------------------------------
@@ -53,8 +54,8 @@ class Jcsv
         name = column_mapping[h]
         if (name.nil?)
           map << h
-        elsif (name == :false)
-          map << nil
+        #elsif (name == :false)
+        #  map << nil
         else
           map << name
         end

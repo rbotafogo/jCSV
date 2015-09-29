@@ -168,7 +168,7 @@ class CSVTest < Test::Unit::TestCase
       assert_equal(2, chunk1[2][1]["customerNo"])
       assert_equal("Down", chunk1[2][1]["lastName"])       
       
-      chunk2 =  iter.next
+      chunk2 = iter.next
 
     end
 

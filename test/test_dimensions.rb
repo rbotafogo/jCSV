@@ -44,9 +44,16 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv file to map" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, dimensions: [:subject, :period])
+      reader = Jcsv.reader("epilepsy.csv", format: :map,
+                           dimensions: [:treatment, :subject, :period])
       treatment = reader.read
-      p reader.dimensions
+      subject = reader.dimensions[:subject]
+      period = reader.dimensions[:period]
+      # p treatment
+      treatment[0].each("_placebo") do |key, val|
+        p key
+        p val
+      end
       
     end
 

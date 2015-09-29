@@ -21,6 +21,7 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+require 'critbit'
 require_relative 'dimensions'
 
 class Jcsv
@@ -89,14 +90,16 @@ class Jcsv
       # raise "The number of columns to be processed #{source.size} must match the number of
       # CellProcessors #{processors.length}" if (source.size != processors.length)
 
+      pd = Array.new
+      
       source.each_with_index do |s, i|
 
         begin
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
           # if column mapping is true, then this column is a dimension.
           if (@column_mapping[i] == true)
-            # @dimensions[@headers[i].to_sym] = s
-            @dimensions[@headers[i]] = s            
+            @dimensions[@headers[i]] = s
+            pd << s
             next
           end
           
@@ -118,7 +121,15 @@ class Jcsv
         
       end
 
-      @processed_columns
+      @res ||= Critbit.new
+      
+      key = String.new
+      pd.each do |k|
+        key << "_" + k 
+      end
+
+      @res[key] = @processed_columns
+      @res
       
     end
     
@@ -183,8 +194,6 @@ class Jcsv
 
     def read(column_mapping, filters)
 
-      p @column_mapping
-      
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors
       @processed_columns = Hash.new
