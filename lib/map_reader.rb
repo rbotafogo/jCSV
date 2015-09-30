@@ -67,6 +67,40 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
+    # read the whole file at once if no block given
+    #---------------------------------------------------------------------------------------
+    
+    def read(&block)
+
+      # When no block given, chunks read are stored in an array and returned to the user.
+      if (!block_given?)
+        if (@dimensions)
+          @rows ||= {}
+          # If chunk size is > 1 this will not work as the key is the last key and not a key
+          # for each element of the chunk... WHAT SHOULD BE DONE!!!
+          parse_with_block do |line_no, row_no, ck, headers|
+            ck.each do |chunk|
+              key = chunk[0].chomp(".")
+              key.split('.').reduce(@rows) { |h,m| h[m] ||= {} }
+              
+              *key, last = chunk[0].split(".")
+              key.inject(@rows, :fetch)[last] = chunk[1]
+            end
+          end
+        else
+          @rows = Array.new
+          parse_with_block do |line_no, row_no, chunk, headers|
+            @rows << chunk
+          end
+        end
+        @rows
+      else
+        parse_with_block(&block)
+      end
+      
+    end
+
+    #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
 
@@ -98,3 +132,12 @@ class Jcsv
   end
 
 end
+
+=begin
+        @key = @key.chomp(".")
+        @key.split('.').reduce(@return_hash) { |h,m| h[m] ||= {} }
+        *@key, last = @key.split(".")
+        @key.inject(@return_hash, :fetch)[last] = @processed_columns
+        
+        @return_hash
+=end

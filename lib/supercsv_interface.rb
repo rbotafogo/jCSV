@@ -90,16 +90,16 @@ class Jcsv
       # raise "The number of columns to be processed #{source.size} must match the number of
       # CellProcessors #{processors.length}" if (source.size != processors.length)
 
-      pd = Array.new
+      key = String.new
       
       source.each_with_index do |s, i|
-
         begin
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
-          # if column mapping is true, then this column is a dimension.
+          # if column mapping is 'true', then this column is a dimension and the data is not
+          # returned in @processed_columns.
           if (@column_mapping[i] == true)
             @dimensions[@headers[i]] = s
-            pd << s
+            key << s + "."
             next
           end
           
@@ -121,15 +121,7 @@ class Jcsv
         
       end
 
-      @res ||= Critbit.new
-      
-      key = String.new
-      pd.each do |k|
-        key << "_" + k 
-      end
-
-      @res[key] = @processed_columns
-      @res
+      (@dimensions)? [key, @processed_columns] : @processed_columns
       
     end
     
@@ -179,6 +171,9 @@ class Jcsv
     include_package "org.supercsv.cellprocessor.ift"
     include Processors
 
+    # When dimensions are defined, then the composition of all dimensions is the 'key'
+    # attr_reader :key
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -197,6 +192,7 @@ class Jcsv
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors
       @processed_columns = Hash.new
+      @return_hash = Hash.new
       @column_mapping = column_mapping
       
       (filters == false)? super(*column_mapping.mapping) :

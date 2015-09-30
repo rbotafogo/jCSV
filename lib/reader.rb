@@ -58,7 +58,9 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    #
+    # A chunk is either one row of the file, or an array with rows.  One row can be either
+    # a one dimensional array with all columns or a hash with all columns (excluding the
+    # dimensions).
     #---------------------------------------------------------------------------------------
     
     def parse_with_block(&block)
@@ -227,11 +229,12 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     
     def read(&block)
-      
+
+      # When no block given, chunks read are stored in an array and returned to the user.
       if (!block_given?)
         @rows = Array.new
-        parse_with_block do |line_no, row_no, row, headers|
-          @rows << row
+        parse_with_block do |line_no, row_no, chunk, headers|
+          @rows << chunk
         end
         @rows
       else
@@ -278,7 +281,9 @@ class Jcsv
     private
     
     #---------------------------------------------------------------------------------------
-    #
+    # A chunk is either one row of the file, or an array with rows.  One row can be either
+    # a one dimensional array with all columns or a hash with all columns (excluding the
+    # dimensions).
     #---------------------------------------------------------------------------------------
 
     def read_chunk
