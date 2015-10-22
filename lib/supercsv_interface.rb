@@ -33,7 +33,7 @@ class Jcsv
 
   class Mapping
 
-    attr_reader :mapping
+    attr_accessor :mapping
 
     def initialize
       @mapping = nil
@@ -90,16 +90,17 @@ class Jcsv
       # raise "The number of columns to be processed #{source.size} must match the number of
       # CellProcessors #{processors.length}" if (source.size != processors.length)
 
-      key = String.new
+      key_array = Array.new
       
       source.each_with_index do |s, i|
         begin
+          # is @column_mapping[i] ever nil? I don't think so... CHECK!!!
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
           # if column mapping is 'true', then this column is a dimension and the data is not
           # returned in @processed_columns.
           if (@column_mapping[i] == true)
             @dimensions[@headers[i]] = s
-            key << s + "."
+            key_array[@dimensions.dimensions_names.index(@headers[i])] = s
             next
           end
           
@@ -121,7 +122,9 @@ class Jcsv
         
       end
 
-      (@dimensions)? [key, @processed_columns] : @processed_columns
+      # (@dimensions)? [key_array.join("."), @processed_columns] : @processed_columns
+      @processed_columns[:key] = key_array if (@dimensions)
+      @processed_columns
       
     end
     
@@ -192,7 +195,7 @@ class Jcsv
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors
       @processed_columns = Hash.new
-      @return_hash = Hash.new
+      # @return_hash = Hash.new
       @column_mapping = column_mapping
       
       (filters == false)? super(*column_mapping.mapping) :

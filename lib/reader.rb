@@ -181,7 +181,7 @@ class Jcsv
                    strings_as_keys: false,
                    format: :list,
                    headers: true,
-                   chunk_size: 1,
+                   chunk_size: 0,
                    dimensions: nil)
       
       @filename = filename
@@ -196,7 +196,7 @@ class Jcsv
       @format = format
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
-      @chunk_size = chunk_size
+      @chunk_size = (chunk_size == :all)? 1.0/0.0 : chunk_size      
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
       @rows = nil
@@ -204,6 +204,8 @@ class Jcsv
       # the user.  dim_set controls this setting
       @dim_set = false
 
+      
+      
       prepare_dimensions if dimensions
 
       # set all preferences.  To create a new reader we need to have the dimensions already
@@ -262,7 +264,6 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def mapping=(map)
-      raise "Mapping is not allowed when 'dimensions' are defined" if dimensions
       @column_mapping.map = map
     end
 
@@ -288,7 +289,7 @@ class Jcsv
 
     def read_chunk
 
-      return @reader.read(@column_mapping, @filters) if @chunk_size == 1
+      return @reader.read(@column_mapping, @filters) if @chunk_size == 0
 
       rows = Array.new
       (1..@chunk_size).each do |i|
@@ -378,7 +379,7 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
-
+    
     def dimensions_mappings
       
       # Build mapping for the dimensions: dimensions need to map to true
@@ -386,10 +387,23 @@ class Jcsv
       @dimensions.each do |dim|
         map[dim.name] = true
       end
-      self.mapping = map
+      # self.mapping=(map, true)
+      send(:mapping=, map, true)
+
+    end
+
+=begin
+    def dimensions_mappings
+      
+      # Build mapping for the dimensions: dimensions need to map to true
+      map = Hash.new
+      @dimensions.each do |dim|
+        map[dim.name] = true
+      end
+      self.mapping=(map, true)
       
     end
-    
+=end    
   end
   
 end

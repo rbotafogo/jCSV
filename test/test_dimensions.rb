@@ -44,18 +44,30 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv file to map" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 10,
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
                            dimensions: [:treatment, :subject, :period])
-      treatment = reader.read
+
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+
+      # since we are reading with chunk_size = :all, then we will only get one chunk back.
+      # Then we can get the first chunk by indexing read with 0: reader.read[0]
+      treatment = reader.read[0]
+
+      # get the dimensions
+      treatment_type = reader.dimensions[:treatment]
       subject = reader.dimensions[:subject]
       period = reader.dimensions[:period]
-      # p treatment[0]
-      # p treatment[1]
-      # p treatment[2]
-      # p treatment.size
-      p treatment
-      p treatment["placebo"]["1"]["10"]
-      p treatment["Progabide"]["1"]["31"]
+
+      p treatment_type.labels
+      p subject.labels
+      p period.labels
+      
+      # p treatment
+      p treatment["placebo"]["10"]
+      p treatment["placebo"]["10"]["1"][:"seizure.rate"]
+      p treatment["Progabide"]["31"]
       
     end
 

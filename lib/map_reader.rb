@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ##########################################################################################
-# @author Rodrigo Botafogo
+# author Rodrigo Botafogo
 #
 # Copyright © 2015 Rodrigo Botafogo. All Rights Reserved. Permission to use, copy, modify, 
 # and distribute this software and its documentation, without fee and without a signed 
@@ -45,50 +45,42 @@ class Jcsv
     # this does not really make any sense, since one gets to the data through the key and
     # not through its position in the array.
     #---------------------------------------------------------------------------------------
-    
-    def mapping=(column_mapping)
+
+    def mapping=(column_mapping, dim_set = false)
+
+      @column_mapping.mapping ||= Array.new
       
-      map = Array.new
-      
-      @headers.each do |h|
+      @headers.each_with_index do |h, i|
+        next if !dim_set && @dimensions && !@dimensions[h].nil?
         name = column_mapping[h]
-        if (name.nil?)
-          map << h
-        #elsif (name == :false)
-        #  map << nil
-        else
-          map << name
-        end
-        # map << ((name_mapping[h].nil?)? h : name_mapping[h])
+        @column_mapping.mapping[i] = (name.nil?)? h : name
       end
-      
-      @column_mapping.map = map
+
+      # p @column_mapping
       
     end
-    
+
     #---------------------------------------------------------------------------------------
-    # read the whole file at once if no block given
+    # read the file.
     #---------------------------------------------------------------------------------------
     
     def read(&block)
 
       # When no block given, chunks read are stored in an array and returned to the user.
       if (!block_given?)
-        if (@dimensions)
-          @rows ||= {}
-          # If chunk size is > 1 this will not work as the key is the last key and not a key
-          # for each element of the chunk... WHAT SHOULD BE DONE!!!
+        @rows = Array.new
+        if (@dimensions && @chunk_size > 0)
           parse_with_block do |line_no, row_no, ck, headers|
+            map ||= {}
             ck.each do |chunk|
-              key = chunk[0].chomp(".")
-              key.split('.').reduce(@rows) { |h,m| h[m] ||= {} }
-              
-              *key, last = chunk[0].split(".")
-              key.inject(@rows, :fetch)[last] = chunk[1]
+              key = chunk[:key].dup
+              key.reduce(map) { |h,m| h[m] ||= {} }
+              last = key.pop
+              key.inject(map, :fetch)[last] = chunk
             end
+            @rows << map
           end
         else
-          @rows = Array.new
           parse_with_block do |line_no, row_no, chunk, headers|
             @rows << chunk
           end
@@ -132,12 +124,3 @@ class Jcsv
   end
 
 end
-
-=begin
-        @key = @key.chomp(".")
-        @key.split('.').reduce(@return_hash) { |h,m| h[m] ||= {} }
-        *@key, last = @key.split(".")
-        @key.inject(@return_hash, :fetch)[last] = @processed_columns
-        
-        @return_hash
-=end

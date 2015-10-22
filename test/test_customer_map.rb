@@ -94,7 +94,7 @@ class CSVTest < Test::Unit::TestCase
       reader.mapping = {:numberofkids => :numero_criancas,
                         :married => "casado",
                         :loyaltypoints => "pontos fidelidade",
-                        :customerno => :false}
+                        :customerno => false}
 
       reader.read do |line_no, row_no, row, headers|
         if (row_no == 5)
