@@ -37,7 +37,7 @@ class CSVTest < Test::Unit::TestCase
     setup do
 
     end
-
+    
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -45,7 +45,7 @@ class CSVTest < Test::Unit::TestCase
     should "parse multi-dimension csv file to map" do
 
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
-                           dimensions: [:treatment, :subject, :period])
+                           dimensions: [:treatment, :subject, :period], deep: true)
 
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
@@ -60,18 +60,106 @@ class CSVTest < Test::Unit::TestCase
       subject = reader.dimensions[:subject]
       period = reader.dimensions[:period]
 
-      p treatment_type.labels
-      p subject.labels
-      p period.labels
+      # variable labels has all dimension labels
+      assert_equal(0, treatment_type.labels["placebo"])
+      assert_equal(1, treatment_type.labels["Progabide"])
+      assert_equal(1, subject.labels["2"])
+      assert_equal(13, subject.labels["14"])
+      assert_equal(58, subject.labels["59"])
+      assert_equal(0, period.labels["1"])
+      assert_equal(3, period.labels["4"])
       
       # p treatment
-      p treatment["placebo"]["10"]
-      p treatment["placebo"]["10"]["1"][:"seizure.rate"]
-      p treatment["Progabide"]["31"]
+      # p treatment["placebo"]["10"]
+      assert_equal("14", treatment["placebo"]["10"]["1"][:"seizure.rate"])
+      # p treatment["Progabide"]["31"]
       
     end
 
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "read data with dimensions and filters" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:treatment, :subject, :period], deep: true,
+                           default_filter: Jcsv.int)
+      
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+
+      # will raise an exception as :period is not a key.  Will break as soon as we read the
+      # first period for the second user
+      treatment = reader.read[0]
+      # p treatment
+      assert_equal(14, treatment["placebo"]["10"]["1"][:"seizure.rate"])
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "read data with dimensions, filters and minimun dimensions" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:subject, :period], deep: true,
+                           default_filter: Jcsv.int)
+
+      # reader.filters = {:treatment => Jcsv.string}
+      
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      # :treatment should be filtered by string.  Not yet implemented.... CHANGE!!
+      reader.mapping = {:treatment => false, :patient => false}
+      treatment = reader.read[0]
+      p treatment["1"]
+      p treatment["31"]
+      
+    end
+    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "raise exception if key is repeated" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:period], deep: true)
+
+      # will raise an exception as :period is not a key.  Will break as soon as we read the
+      # first period for the second user
+      assert_raise ( RuntimeError ) { reader.read[0] }
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "read data into flat map" do
+
+      # paramenter deep: is not passed.  By default it is false
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:subject, :period],
+                           default_filter: Jcsv.int)
+
+      # reader.filters = {:treatment => Jcsv.string}
+      
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      # :treatment should be filtered by string.  Not yet implemented.... CHANGE!!
+      reader.mapping = {:treatment => false, :patient => false}
+      treatment = reader.read[0]
+      p treatment[0]
+      p treatment[1]      
+
+    end
+    
 =begin
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------

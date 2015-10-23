@@ -182,6 +182,7 @@ class Jcsv
                    format: :list,
                    headers: true,
                    chunk_size: 0,
+                   deep: false,
                    dimensions: nil)
       
       @filename = filename
@@ -196,13 +197,14 @@ class Jcsv
       @format = format
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
-      @chunk_size = (chunk_size == :all)? 1.0/0.0 : chunk_size      
+      @chunk_size = (chunk_size == :all)? 1.0/0.0 : chunk_size
+      @deep = deep
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
       @rows = nil
       # When having dimensions, mapping= can only be called internally and not by
       # the user.  dim_set controls this setting
-      @dim_set = false
+      # @dim_set = false
 
       
       

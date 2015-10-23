@@ -43,7 +43,10 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     # Maps columns to the given names.  In map reader, there is no column reordering, as
     # this does not really make any sense, since one gets to the data through the key and
-    # not through its position in the array.
+    # not through its position in the array.  If there are dimensions set, then every
+    # dimension will map to true, in order for it to be properly processed by the parsing
+    # method. Other fields can still be mapped to false, so that they are not read if
+    # desired.
     #---------------------------------------------------------------------------------------
 
     def mapping=(column_mapping, dim_set = false)
@@ -56,8 +59,6 @@ class Jcsv
         @column_mapping.mapping[i] = (name.nil?)? h : name
       end
 
-      # p @column_mapping
-      
     end
 
     #---------------------------------------------------------------------------------------
@@ -69,14 +70,19 @@ class Jcsv
       # When no block given, chunks read are stored in an array and returned to the user.
       if (!block_given?)
         @rows = Array.new
-        if (@dimensions && @chunk_size > 0)
-          parse_with_block do |line_no, row_no, ck, headers|
+        # if (@dimensions && @chunk_size > 0)
+        if (@dimensions && @deep == true)
+          parse_with_block do |line_no, row_no, chunk, headers|
             map ||= {}
-            ck.each do |chunk|
-              key = chunk[:key].dup
+            chunk.each do |row|
+              key = row[:key].dup
               key.reduce(map) { |h,m| h[m] ||= {} }
               last = key.pop
-              key.inject(map, :fetch)[last] = chunk
+              if (key.inject(map, :fetch)[last] != {})
+                # p "overriding value for key: #{chunk[:key]} with #{chunk}"
+                raise "Key #{row[:key]} not unique for this dataset. #{row}"
+              end
+              key.inject(map, :fetch)[last] = row
             end
             @rows << map
           end
