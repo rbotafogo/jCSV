@@ -202,11 +202,6 @@ class Jcsv
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
       @rows = nil
-      # When having dimensions, mapping= can only be called internally and not by
-      # the user.  dim_set controls this setting
-      # @dim_set = false
-
-      
       
       prepare_dimensions if dimensions
 
@@ -344,12 +339,18 @@ class Jcsv
     def prepare_headers
 
       extend Header
-      
+            
       # Read headers
       @headers = @reader.headers
 
       # Convert headers to symbols, unless user specifically does not want it
       @headers.map! { |head| head.downcase.to_sym } unless @strings_as_keys
+
+      # Check dimensions names agains headers
+      @dimensions_names.each do |dim_name|
+        raise "Invalid dimension: #{dim_name} not in headers" if
+          !@headers.include?(dim_name)
+      end if @dimensions
 
       # initialize filters with the default filter
       init_filters
@@ -372,7 +373,7 @@ class Jcsv
 
       if ((!@dimensions_names.nil?) && (@dimensions_names.size != 0))
         # || options[:keep_original_headers]
-        @dimensions_names.map! { |x| x.downcase.to_sym } unless @strings_as_keys 
+        @dimensions_names.map! { |x| x.downcase.to_sym } unless @strings_as_keys
         @dimensions = Dimensions.new(@dimensions_names)
       end
             

@@ -99,7 +99,11 @@ class Jcsv
           # if column mapping is 'true', then this column is a dimension and the data is not
           # returned in @processed_columns.
           if (@column_mapping[i] == true)
-            @dimensions[@headers[i]] = s
+            begin
+              @dimensions[@headers[i]] = s
+            rescue RuntimeError => e
+              raise "Error reading row: #{source.toString()}. " + e.message
+            end
             key_array[@dimensions.dimensions_names.index(@headers[i])] = s
             next
           end

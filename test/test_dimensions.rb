@@ -158,6 +158,40 @@ class CSVTest < Test::Unit::TestCase
 
     end
     
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "raise execption when dimensions are out of order (slower moving to the left)" do
+
+      # paramenter deep: is not passed.  By default it is false
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:period, :subject], deep: true,
+                           default_filter: Jcsv.int)
+
+      reader.mapping = {:treatment => false, :patient => false}
+
+      assert_raise ( RuntimeError ) { treatment = reader.read[0] }
+      # p treatment["1"]
+      # p treatment["2"]
+      
+    end
+    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "identify missing data" do
+      
+      reader = Jcsv.reader("VALE_PETRA.csv", format: :map, chunk_size: :all, col_sep: ';',
+                           default_filter: Jcsv.double,
+                           dimensions: [:symbol, :date], deep: true)
+      
+      ticks = reader.read[0]
+      p ticks
+      
+    end
+    
 =begin
 
     #-------------------------------------------------------------------------------------
