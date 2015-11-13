@@ -21,7 +21,6 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
-require 'critbit'
 require_relative 'dimensions'
 
 class Jcsv
@@ -102,7 +101,8 @@ class Jcsv
             begin
               @dimensions[@headers[i]] = s
             rescue RuntimeError => e
-              raise "Error reading row: #{source.toString()}. " + e.message
+              p "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
+              # raise "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
             end
             key_array[@dimensions.dimensions_names.index(@headers[i])] = s
             next

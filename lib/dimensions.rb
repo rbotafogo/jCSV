@@ -87,14 +87,18 @@ class Jcsv
           reset
           return true
         else
-          # Label read is out of order
-          raise "Invalid label #{label}"
+          # Label read is out of order.  Expected value is either 0 (starting over) or
+          # the next value.  Although we raise an exception, we allow the calling method
+          # to catch the exception and let the program still running.
+          expected_value = (@labels[label] < @current_value)? 0 : @next_value
+          reset if @labels[label] < @current_value
+          @current_value = @labels[label] + 1
+          @next_value = @current_value + 1
+          raise "Missing data: next expected label was '#{@labels.key(expected_value)}' but read '#{label}'."
         end
       else
-        # p "label: #{label}"
         # Trying to add a label when the dimension is frozen raises an exception
         raise "Dimension '#{@name}' is frozen.  Cannot add label '#{label}'." if frozen
-        
         @current_value = @labels[label] = @next_value
         @next_value += 1
       end

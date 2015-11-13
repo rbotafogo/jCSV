@@ -123,7 +123,7 @@ class CSVTest < Test::Unit::TestCase
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-
+=begin
     should "raise exception if key is repeated" do
 
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
@@ -132,9 +132,9 @@ class CSVTest < Test::Unit::TestCase
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
       assert_raise ( RuntimeError ) { reader.read[0] }
-      
-    end
 
+    end
+=end      
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ class CSVTest < Test::Unit::TestCase
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-
+=begin
     should "raise execption when dimensions are out of order (slower moving to the left)" do
 
       # paramenter deep: is not passed.  By default it is false
@@ -176,7 +176,7 @@ class CSVTest < Test::Unit::TestCase
       # p treatment["2"]
       
     end
-    
+=end    
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -184,11 +184,11 @@ class CSVTest < Test::Unit::TestCase
     should "identify missing data" do
       
       reader = Jcsv.reader("VALE_PETRA.csv", format: :map, chunk_size: :all, col_sep: ';',
-                           default_filter: Jcsv.double,
+                           comment_starts: '#', default_filter: Jcsv.double,
                            dimensions: [:symbol, :date], deep: true)
       
       ticks = reader.read[0]
-      p ticks
+      # p ticks
       
     end
     

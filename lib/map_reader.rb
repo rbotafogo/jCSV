@@ -71,7 +71,7 @@ class Jcsv
       if (!block_given?)
         @rows = Array.new
         # if (@dimensions && @chunk_size > 0)
-        if (@dimensions && @deep == true)
+        if (@dimensions && @deep == true && @chunk_size > 0)
           parse_with_block do |line_no, row_no, chunk, headers|
             map ||= {}
             chunk.each do |row|
