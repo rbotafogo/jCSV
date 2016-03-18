@@ -26,7 +26,29 @@ class Jcsv
   private
   
   ##########################################################################################
+  # Class Dimension keeps track of all data dimensions in a CSV file.  A data dimension is
+  # similar to a mathematical dimension such as x, y or z.  In principle, every data should
+  # be associates with only one set of data dimensions.  For example, let's say that our
+  # data has an employee ID, then column ID defines a dimension on the data, since every
+  # employee has a one ID and every ID is associated with only one employee.  As another
+  # example, let's say that we have data about a medical experiment that was done with a
+  # set of patients for 4 weeks, which were given either a medicine of a placebo.  The
+  # data could have columns labeled: "Patient Index", "Week", "Type of Medicine", "Blood
+  # Sample".  Some entries would be:
   #
+  # "Patient Index"       "Week"        "Type of Medicine"      "Blood Sample"
+  #       1                 1               Placebo                 xxxx
+  #       1                 2               Placebo                 xxxx
+  #       2                 1               med1                    xxxx
+  #       2                 2               med1                    xxxx
+  #
+  # "Patient Index", "Week", "Type of Medice" are three dimensions of this data and taken
+  # together unequivocally define the data, i.e., those dimensions are similar to a DB key.
+  # Since this is a key, there should be no other line of data with the same values in
+  # the dimensions.
+  #
+  # CSV files are not ideal for maintaining dimensions, so, in order to read dimensions
+  # in a CSV file, there is the need for some rules.
   ##########################################################################################
   
   class Dimension
@@ -39,7 +61,7 @@ class Jcsv
     attr_accessor :index     # column index of this dimension in the csv file
     
     #------------------------------------------------------------------------------------
-    #
+    # dim_name is the dimension name.
     #------------------------------------------------------------------------------------
 
     def initialize(dim_name)

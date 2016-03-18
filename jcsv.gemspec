@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
+
 require 'rubygems/platform'
-
-require_relative 'version'
-
+require './version'
 
 Gem::Specification.new do |gem|
 
@@ -22,10 +21,12 @@ EOF
   gem.homepage = 'http://github.com/rbotafogo/jCSV/wiki'
   gem.license = 'Apache'
 
-  gem.add_development_dependency('shoulda', '~> 3.5')
-  gem.add_development_dependency('simplecov', '~> 0.7', [">= 0.7.1"])
-  gem.add_development_dependency('yard', '~> 0.8', [">= 0.8.5.2"])
-
+  gem.add_development_dependency('CodeWriter', '~> 0.1')
+  gem.add_development_dependency('shoulda', "~> 3.5")
+  gem.add_development_dependency('simplecov', "~> 0.11")
+  gem.add_development_dependency('yard', "~> 0.8")
+  gem.add_development_dependency('kramdown', "~> 1.0")
+  
   # ensure the gem is built out of versioned files
   gem.files = Dir['Rakefile', 'version.rb', 'config.rb', '{lib,test}/**/*.rb', 'test/**/*.csv',
                   'test/**/*.xlsx',

@@ -24,7 +24,7 @@
 require_relative 'dimensions'
 
 class Jcsv
-  include_package "org.supercsv.cellprocessor.ift"
+ include_package "org.supercsv.cellprocessor.ift"
 
   #========================================================================================
   #
@@ -53,7 +53,7 @@ class Jcsv
   end  
 
   #========================================================================================
-  #
+  # Module Processors interfaces the Ruby code with the SuperCsv cell processors.
   #========================================================================================
 
   module Processors
@@ -135,7 +135,7 @@ class Jcsv
   end
   
   #========================================================================================
-  #
+  # Class CLR (CSV List Reader) wraps java CsvListReader.
   #========================================================================================
 
   class CLR < org.supercsv.io.CsvListReader
@@ -171,7 +171,7 @@ class Jcsv
   end
 
   #========================================================================================
-  #
+  # class CMR (CSV Map Reader) wraps class CsvMapReader
   #========================================================================================
 
   class CMR < org.supercsv.io.CsvMapReader

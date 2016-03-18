@@ -25,7 +25,7 @@ require 'test/unit'
 require 'shoulda'
 require 'date'
 
-require_relative '../config'
+require_relative '../config' if !@platform
 
 require 'jcsv'
 

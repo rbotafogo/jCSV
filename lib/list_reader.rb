@@ -39,7 +39,8 @@ class Jcsv
     private
     
     #========================================================================================
-    #
+    # This module should be included if the ListReader has headers; otherwise, the
+    # HeaderLess module should be included.
     #========================================================================================
     
     module Header 
@@ -47,14 +48,15 @@ class Jcsv
       #---------------------------------------------------------------------------------------
       # When file has headers, mapping should be done through the use of a hash like data
       # structure that responds to [] with a key.  In files without header, the mapping will
-      # be done by use of arrays.
+      # be done by use of arrays.  A mapping allows for reordering of columns.  When reading
+      # with dimensions, a mapping is automatically created, by bringing the dimensions to
+      # the first columns of the data.
       #---------------------------------------------------------------------------------------
       
       def mapping=(map)
 
         # should allow mapping even with dimensions, but we need to be careful since
         # dimensions set a mapping and this needs to be preserved. 
-        
         @column_mapping.map = Array.new
         
         i = 0
@@ -78,7 +80,8 @@ class Jcsv
     module HeaderLess
       
       #---------------------------------------------------------------------------------------
-      #
+      # TODO: Needs to be reviewed.  Headerless ListReader needs further testing and
+      # eventually a new set of features.
       #---------------------------------------------------------------------------------------
       
       def mapping=(map)
@@ -100,7 +103,7 @@ class Jcsv
     #========================================================================================
 
     #---------------------------------------------------------------------------------------
-    #
+    # Should be called when the data has headers
     #---------------------------------------------------------------------------------------
 
     def prepare_headers
@@ -109,7 +112,7 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    #
+    # Should be called for headerless data
     #---------------------------------------------------------------------------------------
 
     def headerless
@@ -118,7 +121,7 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    #
+    # Creates a new CLR reader with the given set of preferences
     #---------------------------------------------------------------------------------------
 
     def new_reader(preferences)

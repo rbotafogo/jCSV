@@ -25,7 +25,6 @@ require 'test/unit'
 require 'shoulda'
 
 require_relative '../config'
-
 require 'jcsv'
 
 class CSVTest < Test::Unit::TestCase
@@ -45,9 +44,10 @@ class CSVTest < Test::Unit::TestCase
 
       # Reads all rows in memory and return and array of arrays. Each line is stored in
       # one array.  Data is stored in the 'rows' instance variable.
-      # Create the reader with all default parameters.
+      # Create the reader with all default parameters.  Headers are converted from string
+      # to symbol
       reader = Jcsv.reader("customer.csv")
-
+            
       # now read the whole csv file
       content = reader.read
 
@@ -60,7 +60,7 @@ class CSVTest < Test::Unit::TestCase
                     "1600 Amphitheatre Parkway\nMountain View, CA 94043\nUnited States",
                     nil, nil, "\"May the Force be with you.\" - Star Wars",
                     "jdunbar@gmail.com", "0"], content[0])
-
+      
     end
 
     #-------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ class CSVTest < Test::Unit::TestCase
 
       # Reads all rows in memory and return and array of arrays. Each line is stored in
       # one array.  Data is stored in the 'rows' instance variable.
-      # Create the reader with the necessary parameters
+      # Headers are kept as strings instead of symbol
       reader = Jcsv.reader("customer.csv", strings_as_keys: true)
 
       # now read the whole csv file
@@ -97,7 +97,6 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
       
       reader.read do |line_no, row_no, row, headers|
-
         assert_equal(4, line_no) if row_no == 2
         assert_equal(7, line_no) if row_no == 3
         assert_equal(10, line_no) if row_no == 4
@@ -222,7 +221,6 @@ class CSVTest < Test::Unit::TestCase
       
       reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
-      # Add filters, so that we get 'objects' instead of strings for filtered fields
       # Add filters, so that we get 'objects' instead of strings for filtered fields
       reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
