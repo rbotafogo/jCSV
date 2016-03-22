@@ -163,7 +163,6 @@ class CSVTest < Test::Unit::TestCase
                         :customerno => Jcsv.int}
 
       reader.each do |line_no, row_no, chunk, headers|
-
         # line_no and row_no are the last read line_no and row_no of the chunk.  Since we
         # have headers and are reading in chunks of two, the first chunk has row_no = 3
         assert_equal([[1, "John", "Dunbar", "13/06/1945",
@@ -364,21 +363,7 @@ class CSVTest < Test::Unit::TestCase
       end
 
     end
-    
-  end
-
-end
-
-
-=begin
-
-      # When there are no headers setting filters and mapping needs to be done 
-      # using the columns position in the file.  Note that we can have specify fewer
-      # filters or mapping.
-      # Filters for the first 4 columns, the other columns will not be filtered
-      reader.filters = [Jcsv.optional, Jcsv.optional, Jcsv.int, Jcsv.date("dd/MM/yyyy")]
-
-
+=begin    
     #-------------------------------------------------------------------------------------
     # JRuby fiber seems to have a bug.  Don't know if only JRuby fiber or fibers in 
     # general.  When returning the first element the second is also retrieved (look
@@ -387,6 +372,8 @@ end
     #-------------------------------------------------------------------------------------
 
     should "allow changing parameters in between reads" do
+
+      p "testing fiber"
       
       # Start with chunk_size 1
       reader = Jcsv.reader("customer.csv", headers: true, chunk_size: 1)
@@ -408,4 +395,18 @@ end
       p enum.next
       
     end
+=end    
+  end
+
+end
+
+
+=begin
+
+      # When there are no headers setting filters and mapping needs to be done 
+      # using the columns position in the file.  Note that we can have specify fewer
+      # filters or mapping.
+      # Filters for the first 4 columns, the other columns will not be filtered
+      reader.filters = [Jcsv.optional, Jcsv.optional, Jcsv.int, Jcsv.date("dd/MM/yyyy")]
+
 =end

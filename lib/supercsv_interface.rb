@@ -121,7 +121,7 @@ class Jcsv
             end
           end
         rescue SuperCsvConstraintViolationException => e
-          raise "Contraint violation: #{context.toString}"
+          raise "Constraint violation: #{context.toString}"
         end
         
       end
