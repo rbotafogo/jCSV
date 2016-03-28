@@ -149,6 +149,7 @@ EOT
 
 code(<<-EOT)
 require 'jcsv'
+require 'pp'
 
 # Create a new reader by passing the filename to be parsed
 reader = Jcsv.reader("customer.csv")
@@ -291,7 +292,7 @@ content = reader.read
 EOT
 
 console(<<-EOT)
-p content[0]
+pp content[0]
 EOT
 
 body(<<-EOT)
@@ -311,10 +312,12 @@ reader = Jcsv.reader("customer.csv", chunk_size: 3)
 reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
                   :customerno => Jcsv.int}
+EOT
 
+console(<<-EOT)
 reader.read do |line_no, row_no, chunk, headers|
   puts "line number: \#{line_no}, row number: \#{row_no}"
-  p chunk
+  pp chunk
   puts
 end
 EOT
@@ -349,7 +352,7 @@ and headers.  In this example, at this point we have read only two records.
 EOT
 
 console(<<-EOT)
-p chunk
+pp chunk
 EOT
 
 body(<<-EOT)
@@ -452,4 +455,287 @@ reader.read do |line_no, row_no, row, headers|
   p headers
   p row
 end
+EOT
+
+section("Read to Map")
+
+body(<<-EOT)
+In this section we show how to read data into an array of maps (hashes) instead as into 
+an array of arrays.  Reading to map is very easy and only requires passing one argument: 
+'format: :map'.
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("customer.csv", format: :map)
+
+# map is an array of hashes
+map = reader.read
+EOT
+
+body(<<-EOT)
+In order to get the :loyaltypoints for the second customer we do:
+EOT
+
+console(<<-EOT)
+p map[1][:loyaltypoints]
+EOT
+
+body(<<-EOT)
+Reading to maps support most of the same arguments as reading to lists.  Bellow we read
+with chunk_size 2, and strings as key:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("customer.csv", format: :map, chunk_size: 2, strings_as_keys: true)
+map = reader.read
+EOT
+
+body(<<-EOT)
+With chunk_size 2, we have in variable map two chunks, each of size 2.  Let's take a look
+at the first element of the second chunk, i.e., the third row of data:
+EOT
+
+console(<<-EOT)
+pp map[1][0]
+EOT
+
+body(<<-EOT)
+Filters and mappings are also supported for maps.  Note that we introduce some new filters:
+Jcsv.long and Jcsv.date.  We also show how to rename columns by using a mapping, for instance,
+we want column :numberofkids to be mapped to :numero_criancas which is the same label but in
+portuguese.  Note also that we map :loyaltypoints to the string with white spaces 
+"pontos fielidade".  Finally, columns :customerno, :mailingaddress and :favouritequote are
+also droped.
+EOT
+
+code(<<-EOT)
+# type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
+# fields are required unless explicitly set to optional.
+reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil)
+
+# Set numberOfKids and married as optional, otherwise an exception will be raised
+reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+                  :married => Jcsv.optional(Jcsv.bool),
+                  :loyaltypoints => Jcsv.long,
+                  :customerno => Jcsv.int,
+                  :birthdate => Jcsv.date("dd/MM/yyyy")}
+
+# When parsing to map, it is possible to make a mapping. If column name is :false
+# the column will be removed from the returned row
+reader.mapping = {:numberofkids => :numero_criancas,
+                  :married => "casado",
+                  :loyaltypoints => "pontos fidelidade",
+                  :customerno => false,
+                  :mailingaddress => false,
+                  :favouritequote => false}
+
+reader.read do |line_no, row_no, row|
+  pp row
+end
+EOT
+
+body(<<-EOT)
+Reading as map also supports reading as enumerator:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("customer.csv", chunk_size: 2, format: :map)
+
+# Add filters, so that we get 'objects' instead of strings for filtered fields
+reader.filters = {"numberOfKids" => Jcsv.optional(Jcsv.int),
+                  "married" => Jcsv.optional(Jcsv.bool),
+                  "customerNo" => Jcsv.int}
+
+enum = reader.each
+chunk = enum.next
+EOT
+
+console(<<-EOT)
+pp chunk[2][1]
+EOT
+
+section("Dimensions")
+
+body(<<-EOT)
+From Wikipedia:  
+
+"A dimension is a structure that categorizes facts and measures in order to enable users 
+to answer business questions. Commonly used dimensions are people, products, 
+place and time.
+
+In a data warehouse, dimensions provide structured labeling information to otherwise 
+unordered numeric measures. The dimension is a data set composed of individual, 
+non-overlapping data elements. The primary functions of dimensions are threefold: 
+to provide filtering, grouping and labelling."
+
+Data often has dimensions, but they are just treated as labels for the data in a column of
+the CSV file.
+
+The following excerpt shows data from an experiment in which patients with epilepsy were 
+given either a placebo or Progabide to check the effect of this medicament in their 
+seizure rate during a four week treatment period (data from R). 
+
+Clearly, treatment is a 
+dimension in this data, as a patient is either given a placebo or Progabide. The patient id
+(first column) can also be considered a dimension. In this experiment there were 59 patients,
+during a 4 week period, thus this dataset has 236 rows.
+EOT
+
+comment_code(<<-EOT)
+"patient","treatment","base","age","seizure.rate","period","subject"
+"1","placebo",11,31,5,"1","1"
+"110","placebo",11,31,3,"2","1"
+"112","placebo",11,31,3,"3","1"
+"114","placebo",11,31,3,"4","1"
+"29","Progabide",76,18,11,"1","29"
+"291","Progabide",76,18,14,"2","29"
+"292","Progabide",76,18,9,"3","29"
+"293","Progabide",76,18,8,"4","29"
+"30","Progabide",38,32,8,"1","30"
+EOT
+
+body(<<-EOT)
+Let's now read this dataset and see how dimensions can help understand this data and organize
+it.  Four dimensions are set for this dataset: patient, subject, treatment and period and it
+will be read as an array of maps:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("epilepsy.csv", format: :map, 
+                     dimensions: [:patient, :subject, :treatment, :period])
+treatment = reader.read
+EOT
+
+console(<<-EOT)
+treatment.first(5).each do |row|
+  pp row
+end
+EOT
+
+body(<<-EOT)
+Observe that the :key hashkey has an array with all the element's dimensions and the other
+columns are still processed as in a regular map reader.  At this point it might not be
+clear what the benefit of dimensions are, but let's move a little bit forward.
+EOT
+
+subsection("Deep Map")
+
+body(<<-EOT)
+In the next
+example we will add some new directives to the reader: chunk_size :all and deep_map true.
+The patient field will be ignored, since this is redundant information that can be
+obtained from the subject: 
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                     dimensions: [:treatment, :subject, :period], deep_map: true)
+
+# remove the :patient field from the data, as this field is already given by the
+# :subject field.
+reader.mapping = {:patient => false}
+
+treatment = reader.read[0]
+EOT
+
+body(<<-EOT)
+First let's understand the directive chunk_size :all: this indicates that the file 
+should be read in one large chunk.  When reading chunks, each chunk is an array, of
+arrays of the given chunk size.  When reading chunk_size all, the returned data
+is in an array that has an array with all row, this is why we have treatment 
+above to be reader.read[0].
+
+The attentive reader might ask: "why do we need chunc_size :all, since when no
+chunk size is given the whole file is read anyway?".  This has to do with the
+directive deep_map true.  When deep_map is used, the first dimension's elements 
+are keys to the second dimensions element's and so on.  In order to be able to
+make deep maps chunks of data need to be read.  
+
+The treatment variable above is a hash that has two entries: 'placebo' and 
+'Progabide'.  The placebo entry has as entries the elements from the second 
+dimension, which is subject.  So treatment["placebo"]["1"] shows the data
+for all four periods os treatment for subject "1".
+EOT
+
+console(<<-EOT)
+pp treatment["placebo"]["1"]
+EOT
+
+body(<<-EOT)
+As we can see, on the first period, subject "1" had base = "11", age = "31", 
+seizure.rate = "5".  On the second period it's seizure.rate was "3".  We can
+get this from our treatment variable with:
+EOT
+
+console(<<-EOT)
+p treatment["placebo"]["1"]["2"][:"seizure.rate"]
+EOT
+
+body(<<-EOT)
+Let's take a look at another entry: a subject 38 that uses Progabide.  One aspect to be
+noted in the subject's dimensions on is that it would be better for subjects to be 
+numbered 1, 2, 3, etc. for treatment with 'placebo' and also, 1, 2, 3, etc. for treatment
+with 'Progabide'.  If this were the case then the first patient treated with placebo 
+would be accessed with 'treatment["placebo"]["1"]' and the first patient treated with
+Progabide would be accessed with 'treatment["Progabide"]["1"]'.  In the current 
+forms, we need to know that patient "38" was treated with Progabide. 
+EOT
+
+console(<<-EOT)
+pp treatment["Progabide"]["38"]
+EOT
+
+body(<<-EOT)
+Dimensions' elements can be accessed by accessing reader's 'dimensions' instance
+variable and getting the labels:
+EOT
+
+console(<<-EOT)
+pp reader.dimensions[:treatment].labels
+pp reader.dimensions[:period].labels
+EOT
+
+subsection("Dimensions Ordering")
+
+body(<<-EOT)
+Dimensions should be read from slowest to fast changing in the file.  The example bellow
+shows a CSV file and the proper way of organizing dimensions:
+EOT
+
+comment_code(<<-EOT)
+Dim 1	Dim 2	Dim 3	Data
+A	X	K	1
+A	X	J	2
+A	Y	H	3
+A	Y	G	4
+B	X	K	5
+B	X	J	6
+B	Y	H	7
+B	Y	G	8
+C	X	K	9
+C	X	J	10
+C	Y	H	11
+C	Y	G	12
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
+
+table = reader.read[0]
+EOT
+
+console(<<-EOT)
+pp table
+EOT
+
+body(<<-EOT)
+Changing the order of reading dimensions will generate errors:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_2, :dim_1, :dim_3], deep_map: true)
+table = reader.read[0]
+
 EOT

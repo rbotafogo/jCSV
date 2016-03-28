@@ -101,7 +101,7 @@ class Jcsv
             begin
               @dimensions[@headers[i]] = s
             rescue RuntimeError => e
-              p "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
+              p "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message if !@suppress_errors
               # raise "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
             end
             key_array[@dimensions.dimensions_names.index(@headers[i])] = s
@@ -126,7 +126,6 @@ class Jcsv
         
       end
 
-      # (@dimensions)? [key_array.join("."), @processed_columns] : @processed_columns
       @processed_columns[:key] = key_array if (@dimensions)
       @processed_columns
       
@@ -146,8 +145,9 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def initialize(filereader, preferences, dimensions = nil)
+    def initialize(filereader, preferences, dimensions = nil, suppress_errors)
       @dimensions = dimensions
+      @suppress_errors = suppress_errors
       super(filereader, preferences)
     end
 
@@ -185,8 +185,9 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def initialize(filereader, preferences, dimensions = nil)
+    def initialize(filereader, preferences, dimensions = nil, suppress_errors)
       @dimensions = dimensions
+      @suppress_errors = suppress_errors
       super(filereader, preferences)
     end
 

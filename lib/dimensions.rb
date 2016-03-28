@@ -106,12 +106,13 @@ class Jcsv
           @current_value = @next_value
           @next_value = (@next_value + 1) % (@max_value + 1)
         elsif (@labels[label] < @current_value && @labels[label] == 0)
+          # reached the last label and going back to the first one
           reset
           return true
         else
           # Label read is out of order.  Expected value is either 0 (starting over) or
           # the next value.  Although we raise an exception, we allow the calling method
-          # to catch the exception and let the program still running.
+          # to catch the exception and let the program still run.
           expected_value = (@labels[label] < @current_value)? 0 : @next_value
           reset if @labels[label] < @current_value
           @current_value = @labels[label] + 1

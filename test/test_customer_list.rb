@@ -213,6 +213,24 @@ class CSVTest < Test::Unit::TestCase
     end
 
     #-------------------------------------------------------------------------------------
+    # When reading onto a list, chunk_size :all does not change the result significantly.
+    # This will only have an impact when reading onto deep maps with dimensions.
+    #-------------------------------------------------------------------------------------
+
+    should "Read file in one big chunk" do
+
+      p "TODO: add some test cases... no need to go into the tutorial."
+      
+      # Read chunks of the file.  In this case, we are breaking the file in chunks of 2
+      reader = Jcsv.reader("customer.csv", chunk_size: :all)
+
+      # Add filters, so that we get 'objects' instead of strings for filtered fields
+      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+                        :married => Jcsv.optional(Jcsv.bool),
+                        :customerno => Jcsv.int}
+    end
+
+    #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 
@@ -301,6 +319,32 @@ class CSVTest < Test::Unit::TestCase
       end
 
     end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "Read file columns as labels" do
+
+      p "Columns as labels"
+      
+      reader = Jcsv.reader("customer.csv")
+
+      # Add mapping.  When column is mapped to false, it will not be retrieved from the
+      # file, improving time and speed efficiency
+      reader.mapping = {:customerno => true, :numberofkids => false, :loyaltypoints => false}
+        
+      reader.read do |line_no, row_no, chunk, headers|
+        assert_equal([:firstname, :lastname, :birthdate, :mailingaddress, :married,
+                      :favouritequote, :email], headers)
+        if (row_no == 2)
+          assert_equal("John", chunk[0])
+          assert_equal("Dunbar", chunk[1])
+        end
+      end
+
+    end
+    
 #=end
 
     #-------------------------------------------------------------------------------------

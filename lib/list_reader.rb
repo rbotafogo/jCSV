@@ -127,7 +127,8 @@ class Jcsv
     def new_reader(preferences)
 
       begin
-        @reader = CLR.new(FileReader.new(@filename), preferences, @dimensions)
+        @reader = CLR.new(FileReader.new(@filename), preferences, @dimensions,
+                          @suppress_errors)
       rescue java.io.IOException => e
         p e
       end

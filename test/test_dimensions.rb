@@ -24,7 +24,6 @@ require 'rubygems'
 require 'test/unit'
 require 'shoulda'
 require 'matrix'
-require 'mdarray'
 
 require_relative '../config'
 
@@ -37,15 +36,16 @@ class CSVTest < Test::Unit::TestCase
     setup do
 
     end
-    
+        
     #-------------------------------------------------------------------------------------
-    #
+    # When reading the CSV file in one big chunk and selecting deep_map: true, then each
+    # dimension will be hashed across all rows.  [This is not clear at all!!! IMPROVE.]
     #-------------------------------------------------------------------------------------
 
-    should "parse multi-dimension csv file to map" do
+    should "parse multi-dimension csv file to map, chuk_size all and deep_map true" do
 
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
-                           dimensions: [:treatment, :subject, :period], deep: true)
+                           dimensions: [:treatment, :subject, :period], deep_map: true)
 
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
@@ -70,10 +70,57 @@ class CSVTest < Test::Unit::TestCase
       assert_equal(3, period.labels["4"])
       
       # p treatment
+      # p treatment["placebo"]
       # p treatment["placebo"]["10"]
       assert_equal("14", treatment["placebo"]["10"]["1"][:"seizure.rate"])
       # p treatment["Progabide"]["31"]
       
+    end
+
+    #-------------------------------------------------------------------------------------
+    # There is a large difference when parsing multidimensional CSV files with chunks and
+    # no chunks.  When no chunks are selected, then each row is an independent row and
+    # there is no way to get deep maps.
+    #-------------------------------------------------------------------------------------
+
+    should "parse multi-dimension csv file to map no chunk" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map,
+                           dimensions: [:treatment, :subject, :period], deep_map: true)
+
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+
+      # since we are reading with chunk_size = :all, then we will only get one chunk back.
+      # Then we can get the first chunk by indexing read with 0: reader.read[0]
+      treatment = reader.read
+
+      # p treatment
+
+    end
+
+    #-------------------------------------------------------------------------------------
+    # There is a large difference when parsing multidimensional CSV files with chunks and
+    # no chunks.  When no chunks are selected, then each row is an independent row and
+    # there is no way to get deep maps.
+    #-------------------------------------------------------------------------------------
+
+    should "parse multi-dimension csv file to map, deep false" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:treatment, :subject, :period])
+
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+
+      # since we are reading with chunk_size = :all, then we will only get one chunk back.
+      # Then we can get the first chunk by indexing read with 0: reader.read[0]
+      treatment = reader.read
+
+      # p treatment
+
     end
 
     #-------------------------------------------------------------------------------------
@@ -83,7 +130,7 @@ class CSVTest < Test::Unit::TestCase
     should "read data with dimensions and filters" do
 
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
-                           dimensions: [:treatment, :subject, :period], deep: true,
+                           dimensions: [:treatment, :subject, :period], deep_map: true,
                            default_filter: Jcsv.int)
       
       # remove the :patient field from the data, as this field is already given by the
@@ -93,6 +140,7 @@ class CSVTest < Test::Unit::TestCase
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
       treatment = reader.read[0]
+      
       # p treatment
       assert_equal(14, treatment["placebo"]["10"]["1"][:"seizure.rate"])
       
@@ -105,7 +153,7 @@ class CSVTest < Test::Unit::TestCase
     should "read data with dimensions, filters and minimun dimensions" do
 
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
-                           dimensions: [:subject, :period], deep: true,
+                           dimensions: [:subject, :period], deep_map: true,
                            default_filter: Jcsv.int)
 
       # reader.filters = {:treatment => Jcsv.string}
@@ -115,8 +163,8 @@ class CSVTest < Test::Unit::TestCase
       # :treatment should be filtered by string.  Not yet implemented.... CHANGE!!
       reader.mapping = {:treatment => false, :patient => false}
       treatment = reader.read[0]
-      p treatment["1"]
-      p treatment["31"]
+      # p treatment["1"]
+      # p treatment["31"]
       
     end
     
@@ -127,7 +175,7 @@ class CSVTest < Test::Unit::TestCase
     should "raise exception if key is repeated" do
 
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
-                           dimensions: [:period], deep: true)
+                           dimensions: [:period], deep_map: true)
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
@@ -141,7 +189,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data into flat map" do
 
-      # paramenter deep: is not passed.  By default it is false
+      # paramenter deep_map: is not passed.  By default it is false
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
                            dimensions: [:subject, :period],
                            default_filter: Jcsv.int)
@@ -153,20 +201,47 @@ class CSVTest < Test::Unit::TestCase
       # :treatment should be filtered by string.  Not yet implemented.... CHANGE!!
       reader.mapping = {:treatment => false, :patient => false}
       treatment = reader.read[0]
-      p treatment[0]
-      p treatment[1]      
+      # p treatment[0]
+      # p treatment[1]      
 
     end
     
+    #-------------------------------------------------------------------------------------
+    # When reading the CSV file in one big chunk and selecting deep_map: true, then each
+    # dimension will be hashed across all rows.  [This is not clear at all!!! IMPROVE.]
+    #-------------------------------------------------------------------------------------
+
+    should "Show errors when dimensions are not in order or missing" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all, 
+                           dimensions: [:period, :treatment, :subject], deep_map: true,
+                           suppress_errors: true)
+
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+
+      # since we are reading with chunk_size = :all, then we will only get one chunk back.
+      # Then we can get the first chunk by indexing read with 0: reader.read[0]
+      treatment = reader.read[0]
+
+      # get the dimensions
+      treatment_type = reader.dimensions[:treatment]
+      subject = reader.dimensions[:subject]
+      period = reader.dimensions[:period]
+
+      p treatment["1"]["placebo"]
+    end
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 =begin
     should "raise execption when dimensions are out of order (slower moving to the left)" do
 
-      # paramenter deep: is not passed.  By default it is false
+      # paramenter deep_map: is not passed.  By default it is false
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
-                           dimensions: [:period, :subject], deep: true,
+                           dimensions: [:period, :subject], deep_map: true,
                            default_filter: Jcsv.int)
 
       reader.mapping = {:treatment => false, :patient => false}
@@ -177,20 +252,7 @@ class CSVTest < Test::Unit::TestCase
       
     end
 =end    
-    #-------------------------------------------------------------------------------------
-    #
-    #-------------------------------------------------------------------------------------
 
-    should "identify missing data" do
-      
-      reader = Jcsv.reader("VALE_PETRA.csv", format: :map, chunk_size: :all, col_sep: ';',
-                           comment_starts: '#', default_filter: Jcsv.double,
-                           dimensions: [:symbol, :date], deep: true)
-      
-      ticks = reader.read[0]
-      # p ticks
-      
-    end
     
 =begin
 

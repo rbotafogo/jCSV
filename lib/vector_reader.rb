@@ -21,6 +21,8 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+# require 'mdarray'
+
 class Jcsv
 
   #========================================================================================
@@ -36,7 +38,7 @@ class Jcsv
 
     def initialize(*params)
 
-      type = params[1].delete(:type)
+      dtype = params[1].delete(:dtype)
       # creating default double... need to make it the proper type
       params[1][:default_filter] = Jcsv.int
       super(*params)

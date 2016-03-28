@@ -71,8 +71,9 @@ class Jcsv
       if (!block_given?)
         @rows = Array.new
         # if (@dimensions && @chunk_size > 0)
-        if (@dimensions && @deep == true && @chunk_size > 0)
-          parse_with_block do |line_no, row_no, chunk, headers|
+        if (@dimensions && @deep_map == true && @chunk_size > 0)
+          # parse_with_block do |line_no, row_no, chunk, headers|
+          parse_with_block do |line_no, row_no, chunk|
             map ||= {}
             chunk.each do |row|
               key = row[:key].dup
@@ -87,7 +88,8 @@ class Jcsv
             @rows << map
           end
         else
-          parse_with_block do |line_no, row_no, chunk, headers|
+          # parse_with_block do |line_no, row_no, chunk, headers|
+          parse_with_block do |line_no, row_no, chunk|
             @rows << chunk
           end
         end
@@ -112,7 +114,8 @@ class Jcsv
       
       begin
         raise "Reading file as map requires headers." if !@headers
-        @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions);
+        @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions,
+                          @suppress_errors)
       rescue java.io.IOException => e
         p e
       end

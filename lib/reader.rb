@@ -73,10 +73,14 @@ class Jcsv
           mapped_header[map] = @headers[index] if (map.is_a? Numeric)
         end
       end
-      
+
       while (!((chunk = read_chunk).nil?))
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk),
-                   mapped_header)
+        if (mapped_header.size == 0)
+          block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk))
+        else
+          block.call(@reader.getLineNumber(), @reader.getRowNumber(), format(chunk),
+                     mapped_header)
+        end
       end
       
     end
@@ -141,6 +145,7 @@ class Jcsv
     attr_reader :quote_char
     attr_reader :strings_as_keys
     attr_reader :format             # output format: list, map, vector, others...
+    attr_reader :suppress_errors    # true if no error message should be shown
 
     # chunk_size can be changed on the fly
     attr_accessor :chunk_size
@@ -168,6 +173,9 @@ class Jcsv
     # @param ignore_empty_lines Whether empty lines (i.e. containing only end of line symbols)
     # are ignored. The default value is true (empty lines are ignored).
     # @param format Format of result, list, map, vector.
+    # @param deep When true reads data as a deep map (hash), i.e., there is a hash of the
+    # first dimension, that has all rows with this dimension.  If there is a second
+    # dimension, then this is also hashed across all rows, etc.
     #---------------------------------------------------------------------------------------
     
     def initialize(filename,
@@ -182,8 +190,9 @@ class Jcsv
                    format: :list,
                    headers: true,
                    chunk_size: 0,
-                   deep: false,
-                   dimensions: nil)
+                   deep_map: false,
+                   dimensions: nil,
+                   suppress_errors: false)
       
       @filename = filename
       @col_sep = col_sep
@@ -198,10 +207,11 @@ class Jcsv
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
       @chunk_size = (chunk_size == :all)? 1.0/0.0 : chunk_size
-      @deep = deep
+      @deep_map = deep_map
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
       @rows = nil
+      @suppress_errors = suppress_errors
       
       prepare_dimensions if dimensions
 
@@ -395,18 +405,6 @@ class Jcsv
 
     end
 
-=begin
-    def dimensions_mappings
-      
-      # Build mapping for the dimensions: dimensions need to map to true
-      map = Hash.new
-      @dimensions.each do |dim|
-        map[dim.name] = true
-      end
-      self.mapping=(map, true)
-      
-    end
-=end    
   end
   
 end
