@@ -703,6 +703,7 @@ shows a CSV file and the proper way of organizing dimensions:
 EOT
 
 comment_code(<<-EOT)
+# File GoodOrder.csv
 Dim 1	Dim 2	Dim 3	Data
 A	X	K	1
 A	X	J	2
@@ -738,4 +739,195 @@ reader = Jcsv.reader("GoodOrder.csv", format: :map, chunk_size: :all, col_sep: "
                      dimensions: [:dim_2, :dim_1, :dim_3], deep_map: true)
 table = reader.read[0]
 
+EOT
+
+body(<<-EOT)
+In this example we get a message saying that dimension 'dim_1' is frozen.  What does that 
+mean? As we explained above, the CSV reader expects slower changing dimensions to be read
+first.  The proper order of reading dimensions is thus, dim_1, dim_2, dim_3.  A dimension
+becomes frozen whenever it cycles back to its first element.  In this example, dim_2 is
+X, X, Y, Y when it cycles back to X it becomes frozen indicating that X and Y are the
+only two elements in this dimension.  When a dimension if frozen all dimensions after
+it are also frozen.  In this case, dim_1 and dim_3 also become frozen.
+
+When dim_2 cycles back to X the values of dim_1 that were read are A and B.  When it 
+becomes frozen, no other element can be added to this dimension.  When label C is
+read form dim_1, it generates the error saying that label C cannot be added to
+dim_1.
+
+We will now read the file bellow, BadOrder.csv.  It contains the same data as above
+but dimension dim_2 is the first column:
+EOT
+
+comment_code(<<-EOT)
+# File BadOrder.csv
+Dim_2	Dim_1	Dim_3	Data
+X	A	K	1
+X	A	J	2
+Y	A	H	3
+Y	A	G	4
+X	B	K	5
+X	B	J	6
+Y	B	H	7
+Y	B	G	8
+X	C	K	9
+X	C	J	10
+Y	C	H	11
+Y	C	G	12
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("BadOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_2, :dim_1, :dim_3], deep_map: true)
+table = reader.read[0]
+
+EOT
+
+body(<<-EOT)
+Note now that the error happens earlier in the file.  Again, as we read dim_2 we get 
+X, X, Y, Y.  When we cycle back to X, dim_2 is frozen, freezing dim_1 and dim_3 in 
+the sequence.  Now when the first B is read, dim_1 is already frozen and an error is
+issued.
+
+Even though an error is issued, reading continues normally and the table can be 
+printed:
+EOT
+
+console(<<-EOT)
+pp table
+EOT
+
+body(<<-EOT)
+If reading continues normally, why is an error issued?  For large datasets, when 
+data is organized with the slowest changing dimension first, it becomes easier to
+identify missing or duplicated data.  It is also a necessary condition for reading
+data into a vector, as we will show in the the next section ("Reading into a Vector").
+
+We now show a data file in which there is missing data. Note that we removed the 
+fourth line from the file, and note also that this is not easily identified.  In a
+larger dataset, seeing this would be very hard.  
+EOT
+
+comment_code(<<-EOT)
+# File missing_data.csv
+Dim_1	Dim_2	Dim_3	Data
+A	X	K	1
+A	X	J	2
+A	Y	H	3
+B	X	K	5
+B	X	J	6
+B	Y	H	7
+B	Y	G	8
+C	X	K	9
+C	X	J	10
+C	Y	H	11
+C	Y	G	12
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("missing_data.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
+table = reader.read[0]
+
+EOT
+
+body(<<-EOT)
+Again, we get an error with dimension frozen.  This happens when reading the 8th row.
+Dimension 3 was frozen after reading element K, since this dimension cycled from H 
+back to K.  When reaching the 8th row a new element G is seen and indicates that
+something is wrong in the file.
+
+Let's again take a look at what was read:
+EOT
+
+console(<<-EOT)
+pp table
+EOT
+
+body(<<-EOT)
+Bellow we show another CSV file.  Note that there is a missing row in this data.
+Can you quickly see it? Which row is it?
+EOT
+
+comment_code(<<-EOT)
+# File missing_data2.csv
+Dim_1	Dim_2	Dim_3	Data
+A	X	K	1
+A	X	J	2
+A	Y	H	3
+A	Y	G	4
+A	Z	F	5
+A	Z	D	6
+B	X	K	7
+B	X	J	8
+B	Y	H	9
+B	Z	F	10
+B	Z	D	11
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
+table = reader.read[0]
+
+EOT
+
+body(<<-EOT)
+This last example shows how dimensions can help identify duplicate data.  A set of
+dimensions should be unique, as a key in a database.  If the key is duplicate, an
+error is issued.  The same missing_data2.csv file is read, but passing only two
+dimensions, dim_1 and dim2:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_1, :dim_2], deep_map: true)
+table = reader.read[0]
+
+EOT
+
+subsection("Hidding Errors")
+
+body(<<-EOT)
+Since errors are shown but data is still read, if the user knows she doesn't want to be
+notified of errors, she could add the suppress_errors directive:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true,
+                     suppress_errors: true)
+table = reader.read[0]
+
+EOT
+
+body(<<-EOT)
+As can be seen, the code above does not generate any errors.
+EOT
+
+subsection("Dimensions to Lists")
+
+body(<<-EOT)
+Reading data with dimensions to lists is also possible, and will generate arrays of arrays:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("GoodOrder.csv", chunk_size: :all, col_sep: ";",
+                     dimensions: [:dim_1, :dim_2, :dim_3])
+table = reader.read[0]
+
+EOT
+
+console(<<-EOT)
+pp table
+EOT
+
+
+
+
+body(<<-EOT)
+Writen with CodeWriter: 
+  * gem install CodeWriter
+  * jruby -S gem install CodeWriter
+  * https://github.com/rbotafogo/CodeWriter
 EOT

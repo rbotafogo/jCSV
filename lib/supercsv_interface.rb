@@ -200,7 +200,6 @@ class Jcsv
       # initialize @processed_columns to a new Hash.  This will be used by method
       # executeProcessor from module Processors
       @processed_columns = Hash.new
-      # @return_hash = Hash.new
       @column_mapping = column_mapping
       
       (filters == false)? super(*column_mapping.mapping) :

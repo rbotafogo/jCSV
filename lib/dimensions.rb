@@ -226,14 +226,13 @@ class Jcsv
     def add_label(dim_name, label)
 
       should_reset = @dimensions[dim_name].add_label(label)
-
       @dimensions[dim_name].reset if should_reset
-#=begin
+      
       (@dimensions_names.index(dim_name)...@dimensions_names.size).each do |i|
         name = @dimensions_names[i]
         @dimensions[name].reset
       end if should_reset
-#=end      
+
     end
     
     #------------------------------------------------------------------------------------

@@ -400,7 +400,6 @@ class Jcsv
       @dimensions.each do |dim|
         map[dim.name] = true
       end
-      # self.mapping=(map, true)
       send(:mapping=, map, true)
 
     end
