@@ -23,6 +23,24 @@
 
 require_relative 'dimensions'
 
+##########################################################################################
+#
+##########################################################################################
+
+class String
+  def underscore
+    self.gsub(/::/, '/').
+      gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+      gsub(/([a-z\d])([A-Z])/,'\1_\2').
+      tr("-", "_").
+      downcase
+  end
+end
+
+##########################################################################################
+#
+##########################################################################################
+
 class Jcsv
   
   #========================================================================================
@@ -31,6 +49,11 @@ class Jcsv
 
   module Header
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -234,7 +257,8 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    # read the whole file at once if no block given
+    # read the whole file at once if no block given, or pass each row or chunk to the
+    # block to be processed.
     #---------------------------------------------------------------------------------------
     
     def read(&block)
@@ -267,10 +291,12 @@ class Jcsv
     end
     
     #---------------------------------------------------------------------------------------
-    #
+    # Both map_reader and list_reader have a mapping= method.  Is this really necessary?
+    # FIX!!!!
     #---------------------------------------------------------------------------------------
 
-    def mapping=(map)
+    def mapping=(map, dim_set = false)
+      p "reader.rb mapping =.  FIX!"
       @column_mapping.map = map
     end
 
@@ -354,7 +380,7 @@ class Jcsv
       @headers = @reader.headers
 
       # Convert headers to symbols, unless user specifically does not want it
-      @headers.map! { |head| head.downcase.to_sym } unless @strings_as_keys
+      @headers.map! { |head| head.underscore.to_sym } unless @strings_as_keys
 
       # Check dimensions names agains headers
       @dimensions_names.each do |dim_name|
@@ -400,8 +426,9 @@ class Jcsv
       @dimensions.each do |dim|
         map[dim.name] = true
       end
-      send(:mapping=, map, true)
-
+      # send(:mapping=, map, true)
+      send(:assign_mapping, map)
+      
     end
 
   end

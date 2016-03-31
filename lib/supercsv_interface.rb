@@ -45,10 +45,6 @@ class Jcsv
     def []=(index, value)
       @mapping[index] = value
     end
-
-    def map=(mapping)
-      @mapping = mapping
-    end
     
   end  
 
@@ -101,7 +97,8 @@ class Jcsv
             begin
               @dimensions[@headers[i]] = s
             rescue RuntimeError => e
-              p "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message if !@suppress_errors
+              p "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " +
+                e.message if !@suppress_errors
               # raise "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
             end
             key_array[@dimensions.dimensions_names.index(@headers[i])] = s

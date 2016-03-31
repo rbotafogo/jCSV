@@ -52,8 +52,8 @@ class CSVTest < Test::Unit::TestCase
       content = reader.read
 
       # Headers are converted to symbol
-      assert_equal([:customerno, :firstname, :lastname, :birthdate, :mailingaddress,
-                    :married, :numberofkids, :favouritequote, :email, :loyaltypoints],
+      assert_equal([:customer_no, :first_name, :last_name, :birth_date, :mailing_address,
+                    :married, :number_of_kids, :favourite_quote, :email, :loyalty_points],
                    reader.headers)
       
       assert_equal(["1", "John", "Dunbar", "13/06/1945",
@@ -127,10 +127,10 @@ class CSVTest < Test::Unit::TestCase
       parser = Jcsv.reader("customer.csv", default_filter: Jcsv.not_nil)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      parser.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+      parser.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :customerno => Jcsv.int,
-                        :birthdate => Jcsv.date("dd/MM/yyyy")}
+                        :customer_no => Jcsv.int,
+                        :birth_date => Jcsv.date("dd/MM/yyyy")}
       
       parser.read do |line_no, row_no, row, headers|
 
@@ -158,9 +158,9 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+      reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :customerno => Jcsv.int}
+                        :customer_no => Jcsv.int}
 
       reader.each do |line_no, row_no, chunk, headers|
         # line_no and row_no are the last read line_no and row_no of the chunk.  Since we
@@ -213,8 +213,7 @@ class CSVTest < Test::Unit::TestCase
     end
 
     #-------------------------------------------------------------------------------------
-    # When reading onto a list, chunk_size :all does not change the result significantly.
-    # This will only have an impact when reading onto deep maps with dimensions.
+    # 
     #-------------------------------------------------------------------------------------
 
     should "Read file in one big chunk" do
@@ -225,9 +224,9 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", chunk_size: :all)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+      reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :customerno => Jcsv.int}
+                        :customer_no => Jcsv.int}
     end
 
     #-------------------------------------------------------------------------------------
@@ -239,9 +238,9 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+      reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :customerno => Jcsv.int}
+                        :customer_no => Jcsv.int}
 
       # Method each without a block returns an enumerator
       enum = reader.each
@@ -307,11 +306,12 @@ class CSVTest < Test::Unit::TestCase
 
       # Add mapping.  When column is mapped to false, it will not be retrieved from the
       # file, improving time and speed efficiency
-      reader.mapping = {:customerno => false, :numberofkids => false, :loyaltypoints => false}
+      reader.mapping = {:customer_no => false, :number_of_kids => false,
+                        :loyalty_points => false}
         
       reader.read do |line_no, row_no, chunk, headers|
-        assert_equal([:firstname, :lastname, :birthdate, :mailingaddress, :married,
-                      :favouritequote, :email], headers)
+        assert_equal([:first_name, :last_name, :birth_date, :mailing_address, :married,
+                      :favourite_quote, :email], headers)
         if (row_no == 2)
           assert_equal("John", chunk[0])
           assert_equal("Dunbar", chunk[1])
@@ -326,22 +326,12 @@ class CSVTest < Test::Unit::TestCase
 
     should "Read file columns as labels" do
 
-      p "Columns as labels"
-      
       reader = Jcsv.reader("customer.csv")
 
-      # Add mapping.  When column is mapped to false, it will not be retrieved from the
-      # file, improving time and speed efficiency
-      reader.mapping = {:customerno => true, :numberofkids => false, :loyaltypoints => false}
-        
-      reader.read do |line_no, row_no, chunk, headers|
-        assert_equal([:firstname, :lastname, :birthdate, :mailingaddress, :married,
-                      :favouritequote, :email], headers)
-        if (row_no == 2)
-          assert_equal("John", chunk[0])
-          assert_equal("Dunbar", chunk[1])
-        end
-      end
+      # mapping cannot be to true
+      assert_raise (RuntimeError) {
+        reader.mapping = {:customer_no => true, :number_of_kids => true,
+                          :loyalty_points => true}}
 
     end
     
@@ -383,9 +373,9 @@ class CSVTest < Test::Unit::TestCase
       # reading the headers returns false
       # assert_equal(false, reader.headers)
 
-      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+      reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :customerno => Jcsv.int}
+                        :customer_no => Jcsv.int}
 
       # Mapping allows reordering of columns.  In this example, column 0 (:customerno)
       # in the csv file will be loaded in position 2 (3rd column); column 1 (:firstname)
@@ -394,13 +384,13 @@ class CSVTest < Test::Unit::TestCase
       # and so on.
       # When reordering columns, care should be taken to get the mapping right or unexpected
       # behaviour could result.
-      reader.mapping = {:customerno => 2, :firstname => 0, :lastname => false,
-                        :birthdate => 3, :mailingaddress => false, :married => false,
-                        :numberofkids => false, :favouritequote => false, :email => 1,
-                        :loyaltypoints => 4}
+      reader.mapping = {:customer_no => 2, :first_name => 0, :last_name => false,
+                        :birth_date => 3, :mailing_address => false, :married => false,
+                        :number_of_kids => false, :favourite_quote => false, :email => 1,
+                        :loyalty_points => 4}
         
       reader.read do |line_no, row_no, chunk, headers|
-        assert_equal([:firstname, :email, :customerno, :birthdate, :loyaltypoints],
+        assert_equal([:first_name, :email, :customer_no, :birth_date, :loyalty_points],
                      headers)
         assert_equal("John", chunk[0][0]) if row_no == 3
         assert_equal("Alice", chunk[0][0]) if row_no == 5

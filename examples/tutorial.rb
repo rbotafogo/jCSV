@@ -255,10 +255,10 @@ code(<<-EOT)
 parser = Jcsv.reader("customer.csv", default_filter: Jcsv.not_nil)
 # Add filters, so that we get 'objects' instead of strings for filtered fields
 
-parser.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+parser.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :customerno => Jcsv.int,
-                  :birthdate => Jcsv.date("dd/MM/yyyy")}
+                  :customer_no => Jcsv.int,
+                  :birth_date => Jcsv.date("dd/MM/yyyy")}
 
 content = parser.read
 EOT
@@ -284,9 +284,9 @@ code(<<-EOT)
 reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :customerno => Jcsv.int}
+                  :customer_no => Jcsv.int}
 
 content = reader.read
 EOT
@@ -309,9 +309,9 @@ code(<<-EOT)
 reader = Jcsv.reader("customer.csv", chunk_size: 3)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :customerno => Jcsv.int}
+                  :customer_no => Jcsv.int}
 EOT
 
 console(<<-EOT)
@@ -335,9 +335,9 @@ code(<<-EOT)
 reader = Jcsv.reader("customer.csv", chunk_size: 2)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :customerno => Jcsv.int}
+                  :customer_no => Jcsv.int}
 
 # Method each without a block returns an enumerator
 enum = reader.each
@@ -375,9 +375,9 @@ code(<<-EOT)
 reader = Jcsv.reader("customer.csv")
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :customerno => Jcsv.int}
+                  :customer_no => Jcsv.int}
 
 # Method each without a block returns an enumerator
 enum = reader.each
@@ -433,9 +433,9 @@ code(<<-EOT)
 reader = Jcsv.reader("customer.csv")
 
 # Add filters...
-reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :customerno => Jcsv.int}
+                  :customer_no => Jcsv.int}
 
 # Mapping allows reordering of columns.  In this example, column 0 (:customerno)
 # in the csv file will be loaded in position 2 (3rd column); column 1 (:firstname)
@@ -444,10 +444,10 @@ reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
 # and so on.
 # When reordering columns, care should be taken to get the mapping right or unexpected
 # behaviour could result.
-reader.mapping = {:customerno => 2, :firstname => 0, :lastname => false,
-                  :birthdate => 3, :mailingaddress => false, :married => false,
-                  :numberofkids => false, :favouritequote => false, :email => 1,
-                  :loyaltypoints => 4}
+reader.mapping = {:customer_no => 2, :first_name => 0, :last_name => false,
+                  :birth_date => 3, :mailing_address => false, :married => false,
+                  :number_of_kids => false, :favourite_quote => false, :email => 1,
+                  :loyalty_points => 4}
 EOT
 
 console(<<-EOT)
@@ -473,11 +473,11 @@ map = reader.read
 EOT
 
 body(<<-EOT)
-In order to get the :loyaltypoints for the second customer we do:
+In order to get the :loyalty_points for the second customer we do:
 EOT
 
 console(<<-EOT)
-p map[1][:loyaltypoints]
+p map[1][:loyalty_points]
 EOT
 
 body(<<-EOT)
@@ -514,20 +514,20 @@ code(<<-EOT)
 reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil)
 
 # Set numberOfKids and married as optional, otherwise an exception will be raised
-reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                   :married => Jcsv.optional(Jcsv.bool),
-                  :loyaltypoints => Jcsv.long,
+                  :loyalty_points => Jcsv.long,
                   :customerno => Jcsv.int,
-                  :birthdate => Jcsv.date("dd/MM/yyyy")}
+                  :birth_date => Jcsv.date("dd/MM/yyyy")}
 
 # When parsing to map, it is possible to make a mapping. If column name is :false
 # the column will be removed from the returned row
-reader.mapping = {:numberofkids => :numero_criancas,
+reader.mapping = {:number_of_kids => :numero_criancas,
                   :married => "casado",
-                  :loyaltypoints => "pontos fidelidade",
-                  :customerno => false,
-                  :mailingaddress => false,
-                  :favouritequote => false}
+                  :loyalty_points => "pontos fidelidade",
+                  :customer_no => false,
+                  :mailing_address => false,
+                  :favourite_quote => false}
 
 reader.read do |line_no, row_no, row|
   pp row
@@ -911,12 +911,12 @@ body(<<-EOT)
 Reading data with dimensions to lists is also possible, and will generate arrays of arrays:
 EOT
 
-code(<<-EOT)
+#code(<<-EOT)
 reader = Jcsv.reader("GoodOrder.csv", chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_1, :dim_2, :dim_3])
-table = reader.read[0]
+table = reader.read
 
-EOT
+#EOT
 
 console(<<-EOT)
 pp table
@@ -926,7 +926,7 @@ EOT
 
 
 body(<<-EOT)
-Writen with CodeWriter: 
+This text was Markup formated with CodeWriter: 
   * gem install CodeWriter
   * jruby -S gem install CodeWriter
   * https://github.com/rbotafogo/CodeWriter

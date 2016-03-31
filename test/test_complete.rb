@@ -28,4 +28,4 @@ require 'jcsv'
 
 require_relative 'test_customer_list'
 require_relative 'test_customer_map'
-
+require_relative 'test_dimensions'

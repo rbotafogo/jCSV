@@ -47,9 +47,9 @@ class CSVTest < Test::Unit::TestCase
       # map is an array of hashes
       map = reader.read
       # get customerNo of second row
-      assert_equal("2", map[1][:customerno])
+      assert_equal("2", map[1][:customer_no])
       # loyaltyPoints from 4th row
-      assert_equal("36", map[3][:loyaltypoints])
+      assert_equal("36", map[3][:loyalty_points])
       
     end
 
@@ -61,11 +61,15 @@ class CSVTest < Test::Unit::TestCase
 
       # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
       # fields are required unless explicitly set to optional.
-      reader = Jcsv.reader("customer.csv", format: :map, chunk_size: 2, strings_as_keys: true)
+      reader = Jcsv.reader("customer.csv", format: :map, chunk_size: 2,
+                           strings_as_keys: true)
+      
       map = reader.read
+
       # since chunk_size = 2, but we didn't pass a block to reader, we will get back
       # 1 array, with 2 arrays each with a chunk.  Every element of the internal arrays
       # are maps (hashes)
+      
       # Bellow we are looking at the second chunk, element 0.  Since our chunks are of
       # size 2, the second chunk, element 0 is the third row.
       assert_equal("2255887799", map[1][0]["loyaltyPoints"])
@@ -83,27 +87,27 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil)
 
       # Set numberOfKids and married as optional, otherwise an exception will be raised
-      reader.filters = {:numberofkids => Jcsv.optional(Jcsv.int),
+      reader.filters = {:number_of_kids => Jcsv.optional(Jcsv.int),
                         :married => Jcsv.optional(Jcsv.bool),
-                        :loyaltypoints => Jcsv.long,
-                        :customerno => Jcsv.int,
-                        :birthdate => Jcsv.date("dd/MM/yyyy")}
+                        :loyalty_points => Jcsv.long,
+                        :customer_no => Jcsv.int,
+                        :birth_date => Jcsv.date("dd/MM/yyyy")}
 
       # When parsing to map, it is possible to make a mapping. If column name is :false
       # the column will be removed from the returned row
-      reader.mapping = {:numberofkids => :numero_criancas,
+      reader.mapping = {:number_of_kids => :numero_criancas,
                         :married => "casado",
-                        :loyaltypoints => "pontos fidelidade",
-                        :customerno => false}
+                        :loyalty_points => "pontos fidelidade",
+                        :customer_no => false}
 
       reader.read do |line_no, row_no, row, headers|
         if (row_no == 5)
-          assert_equal(nil, row[:customerno])
-          assert_equal("Bill", row[:firstname])
+          assert_equal(nil, row[:customer_no])
+          assert_equal("Bill", row[:first_name])
           assert_equal(true, row["casado"])
-          assert_equal("1973-07-10 00:00:00 -0300", row[:birthdate].to_s)
+          assert_equal("1973-07-10 00:00:00 -0300", row[:birth_date].to_s)
           assert_equal("2701 San Tomas Expressway\nSanta Clara, CA 95050\nUnited States",
-                       row[:mailingaddress])
+                       row[:mailing_address])
           assert_equal(3, row[:numero_criancas])
         end
         

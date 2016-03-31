@@ -36,8 +36,7 @@ class Jcsv
 
     def initialize(*params)
       super(*params)
-      @column_mapping.map = @headers if !@dimensions
-      # p @column_mapping
+      @column_mapping.mapping = @headers if !@dimensions      
     end
     
     #---------------------------------------------------------------------------------------
@@ -49,18 +48,18 @@ class Jcsv
     # desired.
     #---------------------------------------------------------------------------------------
 
-    def mapping=(column_mapping, dim_set = false)
+    def mapping=(column_mapping)
 
       @column_mapping.mapping ||= Array.new
       
       @headers.each_with_index do |h, i|
-        next if !dim_set && @dimensions && !@dimensions[h].nil?
+        next if @dimensions && !@dimensions[h].nil?
         name = column_mapping[h]
         @column_mapping.mapping[i] = (name.nil?)? h : name
       end
 
     end
-
+    
     #---------------------------------------------------------------------------------------
     # read the file.
     #---------------------------------------------------------------------------------------
@@ -70,9 +69,7 @@ class Jcsv
       # When no block given, chunks read are stored in an array and returned to the user.
       if (!block_given?)
         @rows = Array.new
-        # if (@dimensions && @chunk_size > 0)
         if (@dimensions && @deep_map == true && @chunk_size > 0)
-          # parse_with_block do |line_no, row_no, chunk, headers|
           parse_with_block do |line_no, row_no, chunk|
             map ||= {}
             chunk.each do |row|
@@ -130,6 +127,26 @@ class Jcsv
       chunk
     end
     
+    #---------------------------------------------------------------------------------------
+    # Maps columns to the given names.  In map reader, there is no column reordering, as
+    # this does not really make any sense, since one gets to the data through the key and
+    # not through its position in the array.  If there are dimensions set, then every
+    # dimension will map to true, in order for it to be properly processed by the parsing
+    # method. Other fields can still be mapped to false, so that they are not read if
+    # desired.
+    #---------------------------------------------------------------------------------------
+
+    def assign_mapping(column_mapping)
+
+      @column_mapping.mapping ||= Array.new
+      
+      @headers.each_with_index do |h, i|
+        name = column_mapping[h]
+        @column_mapping.mapping[i] = (name.nil?)? h : name
+      end
+
+    end
+
   end
 
 end

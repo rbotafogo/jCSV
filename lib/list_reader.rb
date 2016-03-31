@@ -47,25 +47,26 @@ class Jcsv
       
       #---------------------------------------------------------------------------------------
       # When file has headers, mapping should be done through the use of a hash like data
-      # structure that responds to [] with a key.  In files without header, the mapping will
-      # be done by use of arrays.  A mapping allows for reordering of columns.  When reading
-      # with dimensions, a mapping is automatically created, by bringing the dimensions to
-      # the first columns of the data.
+      # structure that responds to [] with a key.  A mapping allows reordering of columns and
+      # also columns removal.  A column will be removed if this columns mapping is false.
+      # When reading with dimensions, a mapping is automatically created and dimensions are
+      # mapped to true.  
       #---------------------------------------------------------------------------------------
       
-      def mapping=(map)
-
+      def mapping=(column_mapping)
         # should allow mapping even with dimensions, but we need to be careful since
         # dimensions set a mapping and this needs to be preserved. 
-        @column_mapping.map = Array.new
+        # @column_mapping.map = Array.new
+        @column_mapping.mapping ||= Array.new        
         
-        i = 0
-        @headers.each_with_index do |column_name, index|
-          if map[column_name].nil?
-            @column_mapping.mapping[index] ||= i
-            i += 1
+        j = 0
+        @headers.each_with_index do |h, i|
+          if column_mapping[h].nil?
+            @column_mapping.mapping[i] ||= j
+            j += 1
           else
-            @column_mapping.mapping[index] ||= map[column_name]
+            # raise "true is not allowed as a mapping" if mapping[h] == true
+            @column_mapping.mapping[i] ||= column_mapping[h]
           end
         end
         
@@ -91,7 +92,7 @@ class Jcsv
         raise "Filters parameters should either be a hash or an array of filters" if
           !map.is_a? Array
         
-        @column_mapping.map = map
+        @column_mapping.mapping ||= map
         @dim_set = true if @dimensions
         
       end
@@ -119,6 +120,12 @@ class Jcsv
       extend HeaderLess
       super
     end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    private
     
     #---------------------------------------------------------------------------------------
     # Creates a new CLR reader with the given set of preferences
@@ -143,6 +150,33 @@ class Jcsv
       chunk.to_a
     end
 
-  end  
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def assign_mapping(map)
+      
+      # dim_set = false is wrong... just copied from map_reader.  Not working!!!
+      p "list_reader.rb mapping=: This needs to be fixed... look at map_reader.rb"
+      
+      # should allow mapping even with dimensions, but we need to be careful since
+      # dimensions set a mapping and this needs to be preserved. 
+      @column_mapping.mappng ||= Array.new
+      
+      i = 0
+      @headers.each_with_index do |column_name, index|
+        if map[column_name].nil?
+          @column_mapping.mapping[index] ||= i
+          i += 1
+        else
+          # raise "true is not allowed as a mapping" if map[column_name] == true
+          @column_mapping.mapping[index] ||= map[column_name]
+        end
+      end
+      
+    end
+    
+  end
   
-end
+end  
+
