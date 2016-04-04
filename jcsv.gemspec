@@ -21,6 +21,8 @@ EOF
   gem.homepage = 'http://github.com/rbotafogo/jCSV/wiki'
   gem.license = 'Apache'
 
+  gem.add_runtime_dependency('mdarray', '~> 0.5')
+
   gem.add_development_dependency('CodeWriter', '~> 0.1')
   gem.add_development_dependency('shoulda', "~> 3.5")
   gem.add_development_dependency('simplecov', "~> 0.11")

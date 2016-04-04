@@ -54,9 +54,9 @@ class Jcsv
       #---------------------------------------------------------------------------------------
       
       def mapping=(column_mapping)
+        
         # should allow mapping even with dimensions, but we need to be careful since
         # dimensions set a mapping and this needs to be preserved. 
-        # @column_mapping.map = Array.new
         @column_mapping.mapping ||= Array.new        
         
         j = 0
@@ -65,7 +65,8 @@ class Jcsv
             @column_mapping.mapping[i] ||= j
             j += 1
           else
-            # raise "true is not allowed as a mapping" if mapping[h] == true
+            raise "'true' is not allowed as a mapping: #{column_mapping}" if
+              column_mapping[h] == true
             @column_mapping.mapping[i] ||= column_mapping[h]
           end
         end
@@ -154,25 +155,23 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def assign_mapping(map)
-      
-      # dim_set = false is wrong... just copied from map_reader.  Not working!!!
-      p "list_reader.rb mapping=: This needs to be fixed... look at map_reader.rb"
+    def assign_mapping(column_mapping)
       
       # should allow mapping even with dimensions, but we need to be careful since
       # dimensions set a mapping and this needs to be preserved. 
-      @column_mapping.mappng ||= Array.new
+      @column_mapping.mapping ||= Array.new
       
-      i = 0
-      @headers.each_with_index do |column_name, index|
-        if map[column_name].nil?
-          @column_mapping.mapping[index] ||= i
-          i += 1
+      j = 0
+      @headers.each_with_index do |h, i|
+        if column_mapping[h].nil?
+          @column_mapping.mapping[i] ||= j
+          j += 1
         else
-          # raise "true is not allowed as a mapping" if map[column_name] == true
-          @column_mapping.mapping[index] ||= map[column_name]
+          @column_mapping.mapping[i] ||= column_mapping[h]
         end
       end
+      
+      # p @column_mapping.mapping
       
     end
     

@@ -55,6 +55,7 @@ class Jcsv
       @headers.each_with_index do |h, i|
         next if @dimensions && !@dimensions[h].nil?
         name = column_mapping[h]
+        raise "'true' is not allowed as a mapping: #{column_mapping}" if name == true
         @column_mapping.mapping[i] = (name.nil?)? h : name
       end
 

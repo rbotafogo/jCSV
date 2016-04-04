@@ -198,6 +198,37 @@ class CSVTest < Test::Unit::TestCase
     end
     
     #-------------------------------------------------------------------------------------
+    # 
+    #-------------------------------------------------------------------------------------
+
+    should "raise error is mapping a column to true" do
+
+      # paramenter deep_map: is not passed.  By default it is false
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+                           dimensions: [:subject, :period],
+                           default_filter: Jcsv.int)
+
+      # Raises an error, since mapping to true is not defined
+      assert_raise ( RuntimeError ) { reader.mapping =
+                                      {:treatment => false, :patient => true} }
+
+    end
+    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+#=begin
+    should "read dimensions to lists" do
+
+      reader = Jcsv.reader("epilepsy.csv", chunk_size: :all,
+                           dimensions: [:treatment, :subject, :period])
+
+      table = reader.read
+      p table
+      
+    end
+#=end
+    #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 =begin

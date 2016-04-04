@@ -24,10 +24,14 @@
 require_relative 'dimensions'
 
 class Jcsv
- include_package "org.supercsv.cellprocessor.ift"
-
+  include_package "org.supercsv.cellprocessor.ift"
+  
   #========================================================================================
-  #
+  # Mapping contains a mapping from column names to:
+  #   * other column names: when we want to change the name of the column
+  #   * false: when we want to remove the column from reading
+  #   * true: when the column is a dimensions
+  # If there is no mapping then the column number maps to itself
   #========================================================================================
 
   class Mapping
@@ -39,6 +43,7 @@ class Jcsv
     end
     
     def [](index)
+      # p "#{@mapping}, #{index}"
       (@mapping.nil?)? index : @mapping[index]
     end
 
@@ -57,6 +62,7 @@ class Jcsv
     include_package "org.supercsv.exception"
 
     attr_reader :dimensions
+    attr_reader :key_array
     
     #---------------------------------------------------------------------------------------
     #
@@ -85,14 +91,14 @@ class Jcsv
       # raise "The number of columns to be processed #{source.size} must match the number of
       # CellProcessors #{processors.length}" if (source.size != processors.length)
 
-      key_array = Array.new
+      @key_array = Array.new
       
       source.each_with_index do |s, i|
         begin
           # is @column_mapping[i] ever nil? I don't think so... CHECK!!!
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
-          # if column mapping is 'true', then this column is a dimension and the data is not
-          # returned in @processed_columns.
+          # if column mapping is 'true', then this column is a dimension and the data in this
+          # column is part of the key
           if (@column_mapping[i] == true)
             begin
               @dimensions[@headers[i]] = s
@@ -101,7 +107,7 @@ class Jcsv
                 e.message if !@suppress_errors
               # raise "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
             end
-            key_array[@dimensions.dimensions_names.index(@headers[i])] = s
+            @key_array[@dimensions.dimensions_names.index(@headers[i])] = s
             next
           end
           
@@ -123,7 +129,7 @@ class Jcsv
         
       end
 
-      @processed_columns[:key] = key_array if (@dimensions)
+      # @processed_columns[:key] = @key_array if (@dimensions)
       @processed_columns
       
     end
@@ -209,9 +215,18 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def filter_input(name_mapping, processors)
-      executeProcessors(processors) if (readRow())
+      if (readRow())
+        processed_columns = executeProcessors(processors)
+        processed_columns[:key] = @key_array if dimensions
+        return processed_columns
+      end
     end
 
+=begin
+    def filter_input(name_mapping, processors)
+      processed_columns = executeProcessors(processors) if (readRow())
+    end
+=end
   end
   
 end

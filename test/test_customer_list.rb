@@ -434,13 +434,3 @@ class CSVTest < Test::Unit::TestCase
 
 end
 
-
-=begin
-
-      # When there are no headers setting filters and mapping needs to be done 
-      # using the columns position in the file.  Note that we can have specify fewer
-      # filters or mapping.
-      # Filters for the first 4 columns, the other columns will not be filtered
-      reader.filters = [Jcsv.optional, Jcsv.optional, Jcsv.int, Jcsv.date("dd/MM/yyyy")]
-
-=end
