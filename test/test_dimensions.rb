@@ -91,12 +91,41 @@ class CSVTest < Test::Unit::TestCase
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
       treatment = reader.read[0]
-      
-      # p treatment
+
       assert_equal(14.0, treatment["placebo"]["10"]["1"][:"seizure.rate"])
+      assert_equal(19.0, treatment["Progabide"]["45"]["1"][:"seizure.rate"])
       
     end
     
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "read data with deep_map but chunk_size not all" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+                           dimensions: [:treatment, :subject, :period], deep_map: true,
+                           default_filter: Jcsv.int)
+      
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+      reader.filters = {:"seizure.rate" => Jcsv.double}
+
+      # will raise an exception as :period is not a key.  Will break as soon as we read the
+      # first period for the second user
+      treatment = reader.read
+      
+      assert_equal(3.0, treatment[0]["placebo"]["2"]["1"][:"seizure.rate"])
+      # since only 20 rows read per chunk, there is no Progabide row yet. Note that there
+      # was data in the test above
+      assert_equal(nil, treatment[0]["Progabide"])
+
+      # chunk 10, has Progabide as a dimension
+      assert_equal(6.0, treatment[10]["Progabide"]["51"]["2"][:"seizure.rate"])
+      
+    end
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -113,6 +142,30 @@ class CSVTest < Test::Unit::TestCase
     end
 =end
     
+    #-------------------------------------------------------------------------------------
+    # When reading the CSV file in one big chunk and selecting deep_map: true, then each
+    # dimension will be hashed across all rows.  [This is not clear at all!!! IMPROVE.]
+    #-------------------------------------------------------------------------------------
+=begin
+    should "Show errors when dimensions are not in order or missing" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all, 
+                           dimensions: [:period, :treatment, :subject], deep_map: true)
+
+      p "LOTS OF ERROR MESSAGES EXPECTED FROM HERE..."
+      
+      # remove the :patient field from the data, as this field is already given by the
+      # :subject field.
+      reader.mapping = {:patient => false}
+
+      # since we are reading with chunk_size = :all, then we will only get one chunk back.
+      # Then we can get the first chunk by indexing read with 0: reader.read[0]
+      treatment = reader.read[0]
+
+      p "... TO HERE.  If no error messages, then something is wrong!"
+      
+    end
+=end
     #-------------------------------------------------------------------------------------
     # When reading the CSV file in one big chunk and selecting deep_map: true, then each
     # dimension will be hashed across all rows.  [This is not clear at all!!! IMPROVE.]
@@ -196,12 +249,33 @@ class CSVTest < Test::Unit::TestCase
       assert_equal(3, treatment[1][:"seizure.rate"])
 
     end
-    
+        
+    #-------------------------------------------------------------------------------------
+    # All examples until now had chunk_size :all, but they can have smaller size.  In this
+    # example, chunk_size is 20 and it is processed by a block
+    #-------------------------------------------------------------------------------------
+
+    should "read with dimension and given a block" do
+
+      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+                           dimensions: [:treatment, :subject, :period], deep_map: true, 
+                           default_filter: Jcsv.int)
+
+      reader.mapping = {:patient => false}
+
+      reader.read do |line_no, row_no, chunk|
+        p line_no
+        p row_no
+        p chunk 
+      end
+
+    end
+
     #-------------------------------------------------------------------------------------
     # 
     #-------------------------------------------------------------------------------------
 
-    should "raise error is mapping a column to true" do
+    should "raise error if mapping a column to true" do
 
       # paramenter deep_map: is not passed.  By default it is false
       reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
@@ -213,21 +287,21 @@ class CSVTest < Test::Unit::TestCase
                                       {:treatment => false, :patient => true} }
 
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
-#=begin
+=begin
     should "read dimensions to lists" do
 
-      reader = Jcsv.reader("epilepsy.csv", chunk_size: :all,
+      reader = Jcsv.reader("epilepsy.csv", chunk_size: :all, deep_map: true,
                            dimensions: [:treatment, :subject, :period])
 
       table = reader.read
-      p table
+      # p table
       
     end
-#=end
+=end
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------

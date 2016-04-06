@@ -33,6 +33,37 @@ class Jcsv
     include_package "java.io"
 
     #---------------------------------------------------------------------------------------
+    # read the file.
+    #---------------------------------------------------------------------------------------
+    
+    def read(&block)
+
+      # When no block given, chunks read are stored in an array and returned to the user.
+      if (!block_given?)
+        @rows = Array.new
+        if (@dimensions && @deep_map == true && @chunk_size > 0)
+          parse_with_block do |line_no, row_no, chunk|
+            @dimensions.names.each do |name|
+              map = Array.new(@dimensions[name].labels.size)
+            end
+            chunk.each do |row|
+              key = row[-1]
+              p key
+            end
+          end
+        else
+          parse_with_block do |line_no, row_no, chunk|
+            @rows << chunk
+          end
+        end
+        @rows
+      else
+        parse_with_block(&block)
+      end
+      
+    end
+    
+    #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
 

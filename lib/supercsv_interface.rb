@@ -129,7 +129,6 @@ class Jcsv
         
       end
 
-      # @processed_columns[:key] = @key_array if (@dimensions)
       @processed_columns
       
     end
@@ -166,9 +165,10 @@ class Jcsv
       @processed_columns = Array.new
       @column_mapping = column_mapping
       
-      (filters == false)? super([].to_java(CellProcessor)) :
-        super(filters.values.to_java(CellProcessor))
-      
+      data_read = (filters == false)? super([].to_java(CellProcessor)) :
+                    super(filters.values.to_java(CellProcessor))
+      data_read[-1] = @key_array if dimensions && data_read
+      data_read
     end
     
   end

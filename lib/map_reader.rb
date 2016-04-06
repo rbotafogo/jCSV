@@ -60,6 +60,34 @@ class Jcsv
       end
 
     end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def read_deep_map(&block)
+
+      parse_with_block do |line_no, row_no, chunk|
+        map = {}
+        chunk.each do |row|
+          key = row[:key].dup
+          key.reduce(map) { |h,m| h[m] ||= {} }
+          last = key.pop
+          if (key.inject(map, :fetch)[last] != {})
+            # p "overriding value for key: #{chunk[:key]} with #{chunk}"
+            raise "Key #{row[:key]} not unique for this dataset. #{row}"
+          end
+          key.inject(map, :fetch)[last] = row
+        end
+        @rows << map
+        if block_given?
+          block.call(@reader.getLineNumber(), @reader.getRowNumber(), @rows)
+          # if there is a block, then the rows are processed by the block
+          @rows = []
+        end
+      end
+      
+    end
     
     #---------------------------------------------------------------------------------------
     # read the file.
@@ -67,35 +95,24 @@ class Jcsv
     
     def read(&block)
 
-      # When no block given, chunks read are stored in an array and returned to the user.
-      if (!block_given?)
-        @rows = Array.new
-        if (@dimensions && @deep_map == true && @chunk_size > 0)
-          parse_with_block do |line_no, row_no, chunk|
-            map ||= {}
-            chunk.each do |row|
-              key = row[:key].dup
-              key.reduce(map) { |h,m| h[m] ||= {} }
-              last = key.pop
-              if (key.inject(map, :fetch)[last] != {})
-                # p "overriding value for key: #{chunk[:key]} with #{chunk}"
-                raise "Key #{row[:key]} not unique for this dataset. #{row}"
-              end
-              key.inject(map, :fetch)[last] = row
-            end
-            @rows << map
-          end
-        else
-          # parse_with_block do |line_no, row_no, chunk, headers|
+      @rows = Array.new
+      
+      if (@dimensions && @deep_map == true && @chunk_size > 0)
+        read_deep_map(&block)
+        @rows
+      else
+        # When no block given, chunks read are stored in an array and returned to the user.
+        if (!block_given?)
           parse_with_block do |line_no, row_no, chunk|
             @rows << chunk
           end
+          @rows
+        else # block given
+          parse_with_block(&block)
         end
-        @rows
-      else
-        parse_with_block(&block)
+        
       end
-      
+        
     end
 
     #---------------------------------------------------------------------------------------
