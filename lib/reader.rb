@@ -167,8 +167,8 @@ class Jcsv
     attr_reader :surrounding_space_need_quotes
     attr_reader :quote_char
     attr_reader :strings_as_keys
-    attr_reader :format             # output format: list, map, vector, others...
-    attr_reader :suppress_errors    # true if no error message should be shown
+    attr_reader :format               # output format: list, map, vector, others...
+    attr_reader :suppress_warnings    # true if no warning messages should be shown
 
     # chunk_size can be changed on the fly
     attr_accessor :chunk_size
@@ -215,7 +215,7 @@ class Jcsv
                    chunk_size: 0,
                    deep_map: false,
                    dimensions: nil,
-                   suppress_errors: false)
+                   suppress_warnings: false)
       
       @filename = filename
       @col_sep = col_sep
@@ -233,8 +233,7 @@ class Jcsv
       @deep_map = deep_map
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
-      @rows = nil
-      @suppress_errors = suppress_errors
+      @suppress_warnings = suppress_warnings
       
       prepare_dimensions if dimensions
 

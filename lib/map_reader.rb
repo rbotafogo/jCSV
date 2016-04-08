@@ -60,34 +60,6 @@ class Jcsv
       end
 
     end
-
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def read_deep_map(&block)
-
-      parse_with_block do |line_no, row_no, chunk|
-        map = {}
-        chunk.each do |row|
-          key = row[:key].dup
-          key.reduce(map) { |h,m| h[m] ||= {} }
-          last = key.pop
-          if (key.inject(map, :fetch)[last] != {})
-            # p "overriding value for key: #{chunk[:key]} with #{chunk}"
-            raise "Key #{row[:key]} not unique for this dataset. #{row}"
-          end
-          key.inject(map, :fetch)[last] = row
-        end
-        @rows << map
-        if block_given?
-          block.call(@reader.getLineNumber(), @reader.getRowNumber(), @rows)
-          # if there is a block, then the rows are processed by the block
-          @rows = []
-        end
-      end
-      
-    end
     
     #---------------------------------------------------------------------------------------
     # read the file.
@@ -95,24 +67,39 @@ class Jcsv
     
     def read(&block)
 
-      @rows = Array.new
-      
+=begin      
       if (@dimensions && @deep_map == true && @chunk_size > 0)
-        read_deep_map(&block)
-        @rows
+        # read_deep_map(&block)
+        p "read deep map"
+        parse_with_block do |line_no, row_no, chunk|
+          p chunk
+        end
       else
+=end
         # When no block given, chunks read are stored in an array and returned to the user.
         if (!block_given?)
-          parse_with_block do |line_no, row_no, chunk|
-            @rows << chunk
+          if (@chunk_size == 0)
+            # chunk_size 0, then add every row to directly to a hash, no need to wrap it
+            # inside an array
+            rows = {}
+            parse_with_block do |line_no, row_no, chunk|
+              rows.merge!(chunk)
+            end
+          else
+            # chunk_size > 0, then each chunk should be a hash, and all chunks should
+            # be wrapped inside an array
+            rows = []
+            parse_with_block do |line_no, row_no, chunk|
+              rows << chunk
+            end
           end
-          @rows
+          rows
         else # block given
           parse_with_block(&block)
         end
         
-      end
-        
+    # end
+    
     end
 
     #---------------------------------------------------------------------------------------
@@ -130,7 +117,7 @@ class Jcsv
       begin
         raise "Reading file as map requires headers." if !@headers
         @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions,
-                          @suppress_errors)
+                          @suppress_warnings)
       rescue java.io.IOException => e
         p e
       end
@@ -164,7 +151,91 @@ class Jcsv
       end
 
     end
+=begin
+    #---------------------------------------------------------------------------------------
+    # Converts a chunk of data (many rows) into a deep map.
+    #---------------------------------------------------------------------------------------
 
+    def read_deep_map(&block)
+
+      rows = []
+      # map = {}
+      
+      parse_with_block do |line_no, row_no, chunk|
+        map = {}
+        chunk.each do |row|
+          key = row[:key].dup
+          key.reduce(map) { |h,m| h[m] ||= {} }
+          last = key.pop
+          if (key.inject(map, :fetch)[last] != {})
+            # p "overriding value for key: #{chunk[:key]} with #{chunk}"
+            raise "Key #{row[:key]} not unique for this dataset. #{row}"
+          end
+          key.inject(map, :fetch)[last] = row
+        end
+        rows << map
+        block.call(@reader.getLineNumber(), @reader.getRowNumber(), rows) if block_given?
+        # block.call(@reader.getLineNumber(), @reader.getRowNumber(), map) if block_given?
+        
+      end
+      rows
+      # map
+      
+    end
+=end
+    
+    #---------------------------------------------------------------------------------------
+    # A chunk is either one row of the file, or an array with rows.  One row can be either
+    # a one dimensional array with all columns or a hash with all columns (excluding the
+    # dimensions).
+    #---------------------------------------------------------------------------------------
+
+    def read_chunk
+
+      if (@dimensions)
+        if (@chunk_size == 0)
+          row = @reader.read(@column_mapping, @filters)
+          return (row.nil?)? nil : { row[:key].join(".") => row }
+        end
+
+        # @chunk_size > 0 && @deep_map
+        if (@deep_map)
+          rows = {}
+          (1..@chunk_size).each do |i|
+            if ((row = @reader.read(@column_mapping, @filters)).nil?)
+              return (rows.size == 0)? nil : rows
+            else
+              key = row[:key].dup
+              key.reduce(rows) { |h,m| h[m] ||= {} }
+              last = key.pop
+              if (key.inject(rows, :fetch)[last] != {})
+                # p "overriding value for key: #{chunk[:key]} with #{chunk}"
+                raise "Key #{row[:key]} not unique for this dataset. #{row}"
+              end
+              key.inject(rows, :fetch)[last] = row
+            end
+          end
+          return rows
+          
+        # @chunk_size > 0, no @deep_map
+        else
+          rows = {}
+          (1..@chunk_size).each do |i|
+            if ((row = @reader.read(@column_mapping, @filters)).nil?)
+              return (rows.size == 0)? nil : rows
+            else
+              rows.merge!({row[:key].join(".") => row})
+            end
+          end
+          return rows
+        end
+      else # no dimensions
+        super
+      end
+      
+    end
+    
   end
-
+  
 end
+  

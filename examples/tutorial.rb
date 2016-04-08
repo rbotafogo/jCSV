@@ -890,13 +890,13 @@ subsection("Hidding Errors")
 
 body(<<-EOT)
 Since errors are shown but data is still read, if the user knows she doesn't want to be
-notified of errors, she could add the suppress_errors directive:
+notified of errors, she could add the suppress_warnings directive:
 EOT
 
 code(<<-EOT)
 reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true,
-                     suppress_errors: true)
+                     suppress_warnings: true)
 table = reader.read[0]
 
 EOT

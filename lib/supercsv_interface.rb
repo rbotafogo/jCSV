@@ -103,9 +103,10 @@ class Jcsv
             begin
               @dimensions[@headers[i]] = s
             rescue RuntimeError => e
-              p "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " +
-                e.message if !@suppress_errors
-              # raise "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " + e.message
+              puts "Warning reading row: #{source.toString()} in field '#{@headers[i]}'. " +
+                   e.message if !@suppress_warnings
+              # raise "Error reading row: #{source.toString()} in field '#{@headers[i]}'. " +
+              # e.message
             end
             @key_array[@dimensions.dimensions_names.index(@headers[i])] = s
             next
@@ -147,9 +148,9 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def initialize(filereader, preferences, dimensions = nil, suppress_errors)
+    def initialize(filereader, preferences, dimensions = nil, suppress_warnings)
       @dimensions = dimensions
-      @suppress_errors = suppress_errors
+      @suppress_warnings = suppress_warnings
       super(filereader, preferences)
     end
 
@@ -188,9 +189,9 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def initialize(filereader, preferences, dimensions = nil, suppress_errors)
+    def initialize(filereader, preferences, dimensions = nil, suppress_warnings)
       @dimensions = dimensions
-      @suppress_errors = suppress_errors
+      @suppress_warnings = suppress_warnings
       super(filereader, preferences)
     end
 
@@ -222,11 +223,6 @@ class Jcsv
       end
     end
 
-=begin
-    def filter_input(name_mapping, processors)
-      processed_columns = executeProcessors(processors) if (readRow())
-    end
-=end
   end
   
 end

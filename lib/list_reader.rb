@@ -40,7 +40,7 @@ class Jcsv
 
       # When no block given, chunks read are stored in an array and returned to the user.
       if (!block_given?)
-        @rows = Array.new
+        rows = []
         if (@dimensions && @deep_map == true && @chunk_size > 0)
           parse_with_block do |line_no, row_no, chunk|
             @dimensions.names.each do |name|
@@ -53,10 +53,10 @@ class Jcsv
           end
         else
           parse_with_block do |line_no, row_no, chunk|
-            @rows << chunk
+            rows << chunk
           end
         end
-        @rows
+        rows
       else
         parse_with_block(&block)
       end
@@ -167,7 +167,7 @@ class Jcsv
 
       begin
         @reader = CLR.new(FileReader.new(@filename), preferences, @dimensions,
-                          @suppress_errors)
+                          @suppress_warnings)
       rescue java.io.IOException => e
         p e
       end
