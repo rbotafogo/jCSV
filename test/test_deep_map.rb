@@ -54,6 +54,7 @@ class CSVTest < Test::Unit::TestCase
       # since we are reading with chunk_size = :all, then we will only get one chunk back.
       # Then we can get the first chunk by indexing read with 0: reader.read[0]
       treatment = reader.read[0]
+      # p treatment
       
       # get the dimensions
       treatment_type = reader.dimensions[:treatment]
@@ -72,7 +73,7 @@ class CSVTest < Test::Unit::TestCase
       assert_equal("14", treatment["placebo"]["10"]["1"][:"seizure.rate"])
       
     end
-=begin
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -90,14 +91,14 @@ class CSVTest < Test::Unit::TestCase
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
-      treatment = reader.read
-      p treatment
+      treatment = reader.read[0]
+      # p treatment
 
       assert_equal(14.0, treatment["placebo"]["10"]["1"][:"seizure.rate"])
       assert_equal(19.0, treatment["Progabide"]["45"]["1"][:"seizure.rate"])
       
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -141,7 +142,6 @@ class CSVTest < Test::Unit::TestCase
       assert_raise ( RuntimeError ) { reader.read[0] }
 
     end
-
     
     #-------------------------------------------------------------------------------------
     # When reading the CSV file in one big chunk and selecting deep_map: true, then each
@@ -187,7 +187,7 @@ class CSVTest < Test::Unit::TestCase
       # since we are reading with chunk_size = :all, then we will only get one chunk back.
       # Then we can get the first chunk by indexing read with 0: reader.read[0]
       treatment = reader.read
-      p treatment
+      # p treatment
 
       p "... to here.  If there are any warning messages then there is something wrong!"
       
@@ -195,9 +195,8 @@ class CSVTest < Test::Unit::TestCase
 
     #-------------------------------------------------------------------------------------
     # There is a large difference when parsing multidimensional CSV files with chunks and
-    # no chunks.  When no chunks are selected, then each row is an independent row and
-    # there is no way to get deep maps.  So, this should be identical to the next
-    # example.
+    # no chunks.  When no chunks are selected, this is identical to normal dimension
+    # reading.
     #-------------------------------------------------------------------------------------
 
     should "parse multi-dimension csv file to map no chunk" do
@@ -214,13 +213,13 @@ class CSVTest < Test::Unit::TestCase
       treatment = reader.read
       # p treatment
       
-      assert_equal("11", treatment[0][:base])
-      assert_equal("31", treatment[0][:age])
-      assert_equal("5", treatment[0][:"seizure.rate"])
+      assert_equal("11", treatment["placebo.1.1"][:base])
+      assert_equal("31", treatment["placebo.1.1"][:age])
+      assert_equal("5", treatment["placebo.1.1"][:"seizure.rate"])
       
-      assert_equal("11", treatment[1][:base])
-      assert_equal("31", treatment[1][:age])
-      assert_equal("3", treatment[1][:"seizure.rate"])
+      assert_equal("11", treatment["placebo.1.2"][:base])
+      assert_equal("31", treatment["placebo.1.2"][:age])
+      assert_equal("3", treatment["placebo.1.2"][:"seizure.rate"])
 
     end
 
@@ -244,7 +243,7 @@ class CSVTest < Test::Unit::TestCase
       end
 
     end
-
+=begin
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------

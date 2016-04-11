@@ -58,6 +58,7 @@ class CSVTest < Test::Unit::TestCase
       # read all the data into a flat map (hash) with keys the dimensions values
       # concatenated with '.'.
       treatment = reader.read
+      # p treatment
 
       assert_equal(11, treatment["placebo.1.1"][:base])
       assert_equal(31, treatment["placebo.1.1"][:age])
@@ -68,7 +69,7 @@ class CSVTest < Test::Unit::TestCase
       assert_equal(17, treatment["Progabide.35.2"][:"seizure.rate"])
       
     end
-
+#=begin
     #-------------------------------------------------------------------------------------
     # Read data into a flat map in chunks
     #-------------------------------------------------------------------------------------
@@ -84,6 +85,7 @@ class CSVTest < Test::Unit::TestCase
       # :subject field.
       reader.mapping = {:patient => false}
       treatment = reader.read
+      # p treatment
 
       treatment_type = reader.dimensions[:treatment]
       subject = reader.dimensions[:subject]
@@ -207,7 +209,7 @@ class CSVTest < Test::Unit::TestCase
                                       {:treatment => false, :patient => true} }
 
     end
-    
+#=end    
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------

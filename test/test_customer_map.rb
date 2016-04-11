@@ -46,6 +46,7 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("customer.csv", format: :map)
       # map is an array of hashes
       map = reader.read
+      
       # get customerNo of second row
       assert_equal("2", map[1][:customer_no])
       # loyaltyPoints from 4th row
