@@ -86,7 +86,7 @@ class Jcsv
     format = params[1]? params[1][:format] : :list
     
     case format
-    when :map
+    when :map, :critbit
       @reader = Jcsv::MapReader.new(*params)
     when :vector
       @reader = Jcsv::VectorReader.new(*params)

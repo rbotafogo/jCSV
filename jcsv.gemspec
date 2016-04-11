@@ -22,6 +22,7 @@ EOF
   gem.license = 'Apache'
 
   gem.add_runtime_dependency('mdarray', '~> 0.5')
+  gem.add_runtime_dependency('critbit', '~> 0.5')
 
   gem.add_development_dependency('CodeWriter', '~> 0.1')
   gem.add_development_dependency('shoulda', "~> 3.5")

@@ -21,6 +21,8 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+require 'critbit'
+
 class Jcsv
 
   #========================================================================================
@@ -36,7 +38,8 @@ class Jcsv
 
     def initialize(*params)
       super(*params)
-      @column_mapping.mapping = @headers if !@dimensions      
+      @column_mapping.mapping = @headers if !@dimensions
+      @map_klass = (@format == :map)? Hash : Critbit
     end
     
     #---------------------------------------------------------------------------------------
@@ -72,7 +75,7 @@ class Jcsv
         # if dimensions and chunk_size is 0, then do not wrap each row in an array, we
         # can access the data directly by using the dimension key
         if (@dimensions && @chunk_size == 0)
-          rows = {}
+          rows = @map_klass.new
           parse_with_block do |line_no, row_no, chunk|
             rows.merge!(chunk)
           end
