@@ -176,7 +176,6 @@ class Jcsv
               key = row.delete(:key).join(".")
               raise "Key #{key} not unique for this dataset. #{row}" if rows.has_key?(key)
               rows.merge!({key => row})
-              # rows.merge!({row.delete(:key).join(".") => row})
             end
           end
         end
@@ -190,37 +189,3 @@ class Jcsv
   end
   
 end
-  
-
-=begin
-    #---------------------------------------------------------------------------------------
-    # Converts a chunk of data (many rows) into a deep map.
-    #---------------------------------------------------------------------------------------
-
-    def read_deep_map(&block)
-
-      rows = []
-      # map = {}
-      
-      parse_with_block do |line_no, row_no, chunk|
-        map = {}
-        chunk.each do |row|
-          key = row[:key].dup
-          key.reduce(map) { |h,m| h[m] ||= {} }
-          last = key.pop
-          if (key.inject(map, :fetch)[last] != {})
-            # p "overriding value for key: #{chunk[:key]} with #{chunk}"
-            raise "Key #{row[:key]} not unique for this dataset. #{row}"
-          end
-          key.inject(map, :fetch)[last] = row
-        end
-        rows << map
-        block.call(@reader.getLineNumber(), @reader.getRowNumber(), rows) if block_given?
-        # block.call(@reader.getLineNumber(), @reader.getRowNumber(), map) if block_given?
-        
-      end
-      rows
-      # map
-      
-    end
-=end

@@ -42,32 +42,20 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
-    should "convert to MDArray" do
+    should "check all filters" do
 
-      reader = Jcsv.reader("sleep.csv", format: :vector, col_sep: ";", comment_starts: "#",
-                           dtype: :double, dimensions: [:group, :id])
-      reader.mapping = {:row => false}
-      ssleep = reader.read
-      ssleep.print
-
-      ssleep.slice(0,0).print
+      reader = Jcsv.reader("filters.csv", format: :map, col_sep: ";", comment_starts: "#")
+      reader.filters = {:big_decimal => Jcsv.big_decimal }
       
+      filters = reader.read[0]
+      p filters[:big_decimal]
+
     end
 
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
 
-    should "convert csv data to an MDArray" do
-
-      reader = Jcsv.reader("epilepsy.csv", headers: true, format: :vector, dtype: :double,
-                           dimensions: [:treatment, :subject, :period])
-      treatment = reader.read
-      # treatment.print
-      treatment.slice(0,0).print
-      
-    end
-
   end
-  
+
 end

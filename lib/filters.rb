@@ -21,11 +21,30 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
+require 'bigdecimal'
   
 class Jcsv
   include_package "org.supercsv.cellprocessor"
   include_package "org.supercsv.cellprocessor.constraint"
 
+  def self.[](filter)
+    case filter
+    when :char
+      Jcsv.char
+    when :bool
+      Jcsv.bool
+    when :int
+      Jcsv.int
+    when :big_decimal
+      Jcsv.big_decimal
+    when :double
+      Jcsv.double
+    when :date
+      Jcsv.date
+    end
+    
+  end
+  
   #========================================================================================
   #
   #========================================================================================
@@ -62,10 +81,25 @@ class Jcsv
   #========================================================================================
   #
   #========================================================================================
-
-  def self.big_decimal
-    ParseBigDecimal.new
+  
+  class RBParseBigDecimal < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include_package "org.supercsv.cellprocessor.ift"
+    # include DateCellProcessor
+    
+    def initialize(next_filter = nil)
+      (next_filter)? super(next_filter): super()
+    end
+    
+    def execute(value, context)
+      validateInputNotNull(value, context)
+      BigDecimal.new(value)
+    end
+    
   end
+
+  #========================================================================================
+  #
+  #========================================================================================
 
   def self.bool
     ParseBool.new
@@ -79,20 +113,35 @@ class Jcsv
     ParseDate.new(date_format, lenient, Jcsv::RBParseDate.new(next_filter))
   end
 
-  def self.double
-    ParseDouble.new
-  end
-
-  def self.enum
-    ParseEnum.new
-  end
-
   def self.int
     ParseInt.new
   end
 
   def self.long
     ParseLong.new
+  end
+
+  #---------------------------------------------------------------------------------------
+  # Convert a String to a BigDecimal. It uses the String constructor of BigDecimal
+  # (new BigDecimal("0.1")) as it yields predictable results (see BigDecimal).
+  # If the data uses a character other than "." as a decimal separator (Germany uses ","
+  # for example), then use the constructor that accepts a DecimalFormatSymbols object, as
+  # it will convert the character to a "." before creating the BigDecimal. Likewise if the
+  # data contains a grouping separator (Germany uses "." for example) then supplying a
+  # DecimalFormatSymbols object will allow grouping separators to be removed before
+  # parsing.
+  #---------------------------------------------------------------------------------------
+  
+  def self.big_decimal(next_filter = nil)
+    Jcsv::RBParseBigDecimal.new(next_filter)
+  end
+
+  def self.double
+    ParseDouble.new
+  end
+
+  def self.enum
+    ParseEnum.new
   end
   
   def self.not_nil

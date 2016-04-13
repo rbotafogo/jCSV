@@ -29,7 +29,7 @@ class Jcsv
   #
   #========================================================================================
   
-  class VectorReader < ListReader
+  class VectorReader < MapReader
     include_package "java.io"
 
     #---------------------------------------------------------------------------------------
@@ -38,35 +38,9 @@ class Jcsv
 
     def initialize(*params)
 
-      dtype = params[1].delete(:dtype)
-      # creating default double... need to make it the proper type
-      params[1][:default_filter] = Jcsv.int
+      @dtype = params[1].delete(:dtype)
+      params[1][:default_filter] = Jcsv[@dtype]
       super(*params)
-
-    end
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
-
-    def read(&block)
-
-      buffer = Array.new
-      lines = 0
-
-      raise "Reading into a vector does not support block" if block_given?
-      
-      parse_with_block do |line_no, row_no, row, headers|
-        buffer.concat(row)
-        # buffer << row
-        lines = row_no
-      end
-
-      @dimensions_names.each do |dim|
-        p @dimensions[dim].size
-      end
-      
-      buffer
       
     end
 
@@ -74,8 +48,41 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def each(&block)
-      raise "Reading into a vector does not support each"
+    def read
+      # data = super
+      to_mdarray(@dtype, super)
+    end
+
+    #---------------------------------------------------------------------------------------
+    # Converts the data to an MDArray
+    #---------------------------------------------------------------------------------------
+
+    def to_mdarray(dtype, storage)
+
+      raise "Cannot convert deep map into MDArray" if (@deep_map == true)
+      
+      prod = nil
+      shape = []
+      
+      columns = @column_mapping.mapping - [true, false, nil]
+      
+      @dimensions.dimensions_names.each do |name|
+        keys = @dimensions[name].labels.keys
+        shape << keys.size
+        prod = (prod.nil?)? keys : prod.product(keys)
+      end
+      
+      header_size = columns.size
+      shape << header_size
+      vector = Array.new
+      
+      prod.each do |k|
+        row = storage[k.flatten.join(".")]
+        vector.concat(((row.nil?)? ([Float::NAN] * header_size) : row.values))
+      end
+
+      array = MDArray.build(@dtype, shape, vector)
+      
     end
     
   end
