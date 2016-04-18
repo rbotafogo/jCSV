@@ -41,14 +41,78 @@ class CSVTest < Test::Unit::TestCase
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
+=begin
+    should "work with DecimalFormatSymbols" do
+
+      dfs = DecimalFormatSymbols.new
+      p dfs.currency_symbol
+      p dfs.decimal_separator.chr
+      p dfs.digit.chr
+      p dfs.exponent_separator
+      p dfs.grouping_separator.chr
+      p dfs.infinity
+      # Returns the ISO 4217 currency code of the currency of these DecimalFormatSymbols.
+      p dfs.international_currency_symbol
+      p dfs.minus_sign.chr
+      p dfs.monetary_decimal_separator.chr
+      p dfs.getNaN
+      # Gets the character used to separate positive and negative subpatterns in a pattern.
+      # p pattern_separator.chr
+      # Gets the character used for percent sign.
+      p	dfs.percent.chr
+      # Gets the character used for per mille sign.
+      p dfs.per_mill
+      # Gets the character used for zero.
+      p dfs.zero_digit.chr
+
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "work with Locales" do
+      
+      locale = Locale.default
+      puts "Your locale country is: #{locale.display_country}"
+
+      # Switch default locale to France, so display_country will be in French.
+      locale = Locale.default = Locale::FRANCE
+      assert_equal("français", locale.display_language)
+      assert_equal("France", locale.display_country)
+
+      # Create a new locale, but default is still France, so output is in French.
+      loc2 = Locale.new(language: "en", country: "US")
+      assert_equal("en-US", loc2.to_language_tag)
+      assert_equal("US", loc2.country)
+      assert_equal("Etats-Unis", loc2.display_country)
+
+      locale = Locale::US
+      p locale
+    end
+=end        
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
 
     should "check all filters" do
 
       reader = Jcsv.reader("filters.csv", format: :map, col_sep: ";", comment_starts: "#")
-      reader.filters = {:big_decimal => Jcsv.big_decimal }
+      reader.filters = {
+        :long => Jcsv.long,
+        :big_num => Jcsv.bignum,
+        :big_decimal => Jcsv.big_decimal(Locale::US),
+        :big_decimal2 => Jcsv.big_decimal(Locale::BRAZIL),
+        :big_decimal3 => Jcsv.big_decimal(Locale::BRAZIL),
+        :http_time => Jcsv.http_time(Date::JULIAN),
+        :iso8601_1 => Jcsv.iso8601(Date::ENGLAND),
+        :iso8601_2 => Jcsv.iso8601(Date::GREGORIAN),
+        :iso8601_3 => Jcsv.iso8601(Date::ITALY),     # Date::ITALY is the default start date
+        :jd_1 => Jcsv.int(next_filter: Jcsv.jd),
+        :jisx0301 => Jcsv.jisx0301 }
       
       filters = reader.read[0]
-      p filters[:big_decimal]
+      p filters
 
     end
 
