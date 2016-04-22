@@ -111,7 +111,7 @@ class Jcsv
         @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions,
                           @suppress_warnings)
       rescue java.io.IOException => e
-        p e
+        puts e
       end
 
     end

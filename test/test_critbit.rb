@@ -45,14 +45,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv into a critbit, alphabetical order" do
       
-      reader = Jcsv.reader("customer.csv", format: :critbit,
+      reader = Jcsv.reader("../data/customer.csv", format: :critbit,
                            dimensions: [:last_name, :first_name])
 
       customers = reader.read
       assert_equal("Down.Bob", customers.keys[0])
       assert_equal("Dunbar.John", customers.keys[1])
             
-      reader = Jcsv.reader("customer.csv", format: :critbit,
+      reader = Jcsv.reader("../data/customer.csv", format: :critbit,
                            dimensions: [:first_name, :last_name])
 
       customers = reader.read
@@ -69,12 +69,10 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data into flat critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
 
-      # reader.filters = {:treatment => Jcsv.string}
-      
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
       reader.mapping = {:patient => false}
@@ -101,7 +99,7 @@ class CSVTest < Test::Unit::TestCase
     should "read data into flat critbit in chunks" do
 
       # paramenter deep_map: is not passed.  By default it is false
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
 
@@ -145,7 +143,7 @@ class CSVTest < Test::Unit::TestCase
     should "read to critbit in enumerable chunks" do
 
       # paramenter deep_map: is not passed.  By default it is false
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
 
@@ -190,7 +188,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "read to critbit and pass to block with dimensions" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
       
@@ -206,7 +204,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "read to critbit and pass to block with dimensions, chunk_size > 1" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
       
@@ -222,7 +220,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "raise error if mapping a column to true in critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: :all,
                            dimensions: [:subject, :period],
                            default_filter: Jcsv.int)
 
@@ -239,7 +237,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv file to critbit, chuk_size all and deep_map true" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: :all,
                            dimensions: [:treatment, :subject, :period], deep_map: true)
 
       # remove the :patient field from the data, as this field is already given by the
@@ -275,14 +273,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data with dimensions, mapping and filters into a critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: :all,
                            dimensions: [:treatment, :subject, :period], deep_map: true,
                            default_filter: Jcsv.int)
       
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
       reader.mapping = {:patient => false}
-      reader.filters = {:"seizure.rate" => Jcsv.double}
+      reader.filters = {:"seizure.rate" => Jcsv.float}
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
@@ -300,14 +298,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data with deep_map in critbit but chunk_size not all" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period], deep_map: true,
                            default_filter: Jcsv.int)
       
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
       reader.mapping = {:patient => false}
-      reader.filters = {:"seizure.rate" => Jcsv.double}
+      reader.filters = {:"seizure.rate" => Jcsv.float}
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
@@ -329,7 +327,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "raise exception if key is repeated in critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: :all,
                            dimensions: [:period], deep_map: true)
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
@@ -345,7 +343,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "Show errors when dimensions are not in order or missing in critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: :all, 
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: :all, 
                            dimensions: [:period, :treatment, :subject], deep_map: true)
 
       p "LOTS OF ERROR MESSAGES EXPECTED FROM HERE..."
@@ -369,7 +367,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "Suppress warnings when dimensions are not in order or missing in critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: :all, 
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: :all, 
                            dimensions: [:period, :treatment, :subject], deep_map: true,
                            suppress_warnings: true)
 
@@ -396,7 +394,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv file to critbit no chunk" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit,
                            dimensions: [:treatment, :subject, :period], deep_map: true)
 
       # remove the :patient field from the data, as this field is already given by the
@@ -425,7 +423,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "read with dimension and given a block in critbit" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :critbit, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :critbit, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period], deep_map: true, 
                            default_filter: Jcsv.int)
 

@@ -24,6 +24,11 @@
 require 'bigdecimal'
 require_relative 'locale'
 
+# class Java::OrgSupercsvCellprocessor::CellProcessorAdaptor
+class Java::OrgSupercsvCellprocessor::CellProcessorAdaptor
+  field_reader :next
+end
+
 class Jcsv
   include_package "org.supercsv.cellprocessor"
   include_package "org.supercsv.cellprocessor.constraint"
@@ -35,14 +40,16 @@ class Jcsv
   #========================================================================================
   #
   #========================================================================================
-  
-  class RBParseInt < org.supercsv.cellprocessor.ParseInt
-    # include_package "org.supercsv.cellprocessor"
 
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter) : super()
+  class RBParseBool < org.supercsv.cellprocessor.ParseBool
+    
+    def initialize(true_values, false_values, ignore_case, next_filter)
+      true_values = true_values.to_java(:string)
+      false_values = false_values.to_java(:string)
+      (next_filter)? super(true_values, false_values, ignore_case, next_filter) :
+        super(true_values, false_values, ignore_case)
     end
-
+    
     def execute(value, context)
       begin
         super(value, context)
@@ -50,93 +57,7 @@ class Jcsv
         puts e.message
         raise FilterError
       end
-    end
-    
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-  
-  class RBParseLong < org.supercsv.cellprocessor.ParseLong
-    # include_package "org.supercsv.cellprocessor"
-
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter) : super()
-    end
-
-    def execute(value, context)
-      begin
-        super(value, context)
-      rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        puts e.message
-        raise FilterError
-      end
-    end
-    
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-  
-  class RBParseBignum < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
-    
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      value.to_i
-    end
-
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class RBParseBigDecimal < org.supercsv.cellprocessor.CellProcessorAdaptor
-
-    attr_reader :locale
-    attr_reader :dfs
-    
-    def initialize(locale, next_filter: nil)
       
-      @locale = locale
-      @dfs = DFSymbols.new(locale)
-      @grouping_separator = @dfs.grouping_separator
-      @decimal_separator = @dfs.decimal_separator
-      
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      # raise "BigDecimal expects a String as input not #{value}" if !(value.is_a? String)
-      BigDecimal.new(value.gsub(@grouping_separator.chr, "").
-                      gsub(@decimal_separator.chr, "."))
-    end
-    
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-  
-  class RBParseHTTPDate < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
-    
-    def initialize(start, next_filter: nil)
-      @start = start
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      DateTime.httpdate(value, @start)
     end
 
   end
@@ -144,89 +65,40 @@ class Jcsv
   #========================================================================================
   #
   #========================================================================================
-  
-  class RBParseISO8601 < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
-    
-    def initialize(start, next_filter: nil)
-      @start = start
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      DateTime.iso8601(value, @start)
-    end
 
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class RBParseJD < org.supercsv.cellprocessor.CellProcessorAdaptor
+  class RBConvertNilTo < org.supercsv.cellprocessor.CellProcessorAdaptor
     include org.supercsv.cellprocessor.ift.LongCellProcessor
+    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
+    include org.supercsv.cellprocessor.ift.StringCellProcessor
+
+    attr_reader :value
+    
+    def initialize(value, next_filter: nil)
+      @value = value
+      (next_filter)? super(next_filter): super()
+    end
+    
+    def execute(value, context)
+      val = (value)? value : @value
+      (self.next)? self.next.execute(val, context) : val      
+    end
+
+  end
+
+  #========================================================================================
+  #
+  #========================================================================================
+
+  class RBOptional < org.supercsv.cellprocessor.CellProcessorAdaptor
     
     def initialize(next_filter: nil)
       (next_filter)? super(next_filter): super()
     end
     
     def execute(value, context)
-      validateInputNotNull(value, context)
-      DateTime.jd(value)
+      (value && self.next)? self.next.execute(value, context) : value      
     end
 
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class RBParseJisx0301 < org.supercsv.cellprocessor.CellProcessorAdaptor
-    
-    def initialize(start, next_filter: nil)
-      @start = start
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      DateTime.jisx0301(value, @start)
-    end
-
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class Pack
-    
-    attr_reader :ruby_obj
-    
-    def initialize(val)
-      @ruby_obj = val
-    end
-    
-  end
-  
-  #========================================================================================
-  #
-  #========================================================================================
-  
-  class RBParseDate < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include_package "org.supercsv.cellprocessor.ift"
-    include DateCellProcessor
-    
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      Jcsv::Pack.new(Time.at(value.getTime()/1000))
-    end
-    
   end
 
   #========================================================================================
@@ -235,6 +107,8 @@ class Jcsv
 
   class RBInRange < org.supercsv.cellprocessor.CellProcessorAdaptor
     include org.supercsv.cellprocessor.ift.LongCellProcessor
+    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
+    include org.supercsv.cellprocessor.ift.StringCellProcessor
 
     attr_reader :min
     attr_reader :max
@@ -242,11 +116,37 @@ class Jcsv
     def initialize(min, max, next_filter: nil)
       @min = min
       @max = max
+      (next_filter.nil?)? super() : super(next_filter)
+    end
+    
+    def execute(value, context)
+      validateInputNotNull(value, context)
+      raise "#{@min} <= #{value} <= #{@max} does not hold" if (value < @min || value > @max)
+      (self.next)? self.next.execute(value, context) : value
+    end
+
+  end
+
+  #========================================================================================
+  #
+  #========================================================================================
+  
+  class RBCollector < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include org.supercsv.cellprocessor.ift.LongCellProcessor
+    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
+    include org.supercsv.cellprocessor.ift.StringCellProcessor
+
+    attr_reader :collection
+    
+    def initialize(next_filter: nil)
+      @collection = []
       (next_filter)? super(next_filter): super()
     end
     
     def execute(value, context)
-      raise "#{@min} <= #{value} <= #{@max} does not hold" if (value < @min || value > @max)
+      validateInputNotNull(value, context)
+      @collection << value
+      (self.next)? self.next.execute(value, context) : value      
     end
 
   end
@@ -255,95 +155,74 @@ class Jcsv
   #
   #========================================================================================
 
-  def self.int(next_filter: nil)
-    RBParseInt.new(next_filter: next_filter)
-  end
+  class RBDynamic < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include org.supercsv.cellprocessor.ift.LongCellProcessor
+    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
+    include org.supercsv.cellprocessor.ift.StringCellProcessor
 
-  def self.long(next_filter: nil)
-    RBParseLong.new(next_filter: next_filter)
-  end
+    def initialize(*args, block: nil, next_filter: nil)
+      @args = args
+      @block = block
+      (next_filter)? super(next_filter): super()
+    end
 
-  def self.bignum(next_filter: nil)
-    RBParseBignum.new(next_filter: next_filter)
+    def execute(value, context)
+      # p value
+      @block.call(value, *(@args))
+    end
+    
   end
   
-  #---------------------------------------------------------------------------------------
-  # Convert a String to a BigDecimal. It uses the String constructor of BigDecimal
-  # (new BigDecimal("0.1")) as it yields predictable results (see BigDecimal).
-  # If the data uses a character other than "." as a decimal separator (Germany uses ","
-  # for example), then use the constructor that accepts a DecimalFormatSymbols object, as
-  # it will convert the character to a "." before creating the BigDecimal. Likewise if the
-  # data contains a grouping separator (Germany uses "." for example) then supplying a
-  # DecimalFormatSymbols object will allow grouping separators to be removed before
-  # parsing.
-  #---------------------------------------------------------------------------------------
-  
-  def self.big_decimal(locale = Locale.default, next_filter: nil)
-    Jcsv::RBParseBigDecimal.new(locale, next_filter: next_filter)
+  #========================================================================================
+  #
+  #========================================================================================
+
+  def self.bool(true_values: ["true", "1", "y", "t"],
+                false_values: ["false", "n", "0", "f"],
+                ignore_case: true, next_filter: nil)
+    RBParseBool.new(true_values, false_values, ignore_case, next_filter)
   end
 
-  def self.double
-    ParseDouble.new
+  def self.convert_nil_to(value, next_filter: nil)
+    RBConvertNilTo.new(value, next_filter: next_filter)
   end
 
-  def self.bool
-    ParseBool.new
+  def self.optional(next_filter: nil)
+    RBOptional.new(next_filter: next_filter)
   end
 
   def self.char
     ParseChar.new
   end
   
-  def self.date(date_format, lenient = false, next_filter: nil)
-    ParseDate.new(date_format, lenient,
-                  Jcsv::RBParseDate.new(next_filter: next_filter))
-  end
-
-  def self.http_time(start = Date::ITALY, next_filter: nil)
-    Jcsv::RBParseHTTPDate.new(start, next_filter: next_filter)
-  end
-
-  def self.iso8601(start = Date::ITALY, next_filter: nil)
-    Jcsv::RBParseISO8601.new(start, next_filter: next_filter)
-  end
-
-  def self.jd(next_filter: nil)
-    Jcsv::RBParseJD.new(next_filter: next_filter)
-  end
-
-  def self.jisx0301(start = Date::ITALY, next_filter: nil)
-    Jcsv::RBParseJisx0301.new(start, next_filter: next_filter)
-  end
-
-  def self.in_range(min, max)
-    Jcsv::RBInRange.new(min, max)
+  def self.in_range(min, max, next_filter: nil)
+    RBInRange.new(min, max, next_filter: next_filter)
   end
   
-  def self.enum
-    ParseEnum.new
+  def self.collector(next_filter: nil)
+    RBCollector.new(next_filter: next_filter)
   end
+
+  def self.dynamic(*args, next_filter: nil, &block)
+    RBDynamic.new(*args, block: block, next_filter: next_filter)
+  end
+
+
+
   
   def self.not_nil
     NotNull.new
-  end
-
-  def self.collector
-    Collector.new
-  end
-
-  def self.convert_null_to(val)
-    ConvertNullTo.new(val)
   end
 
   def self.hash_mapper
     HashMapper.new
   end
 
-  def self.optional(cont = nil)
-    (cont)? Optional.new(cont) : Optional.new
-  end
   
 end
+
+require_relative 'date_filters'
+require_relative 'numeric_filters'
 
 =begin
 
@@ -366,3 +245,37 @@ Unique
 UniqueHashCode
 =end
 
+=begin
+  #========================================================================================
+  #
+  #========================================================================================
+
+  class Pack
+    
+    attr_reader :ruby_obj
+    
+    def initialize(val)
+      @ruby_obj = val
+    end
+    
+  end
+  
+  #========================================================================================
+  #
+  #========================================================================================
+
+  class RBParseDate < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include_package "org.supercsv.cellprocessor.ift"
+    include DateCellProcessor
+    
+    def initialize(next_filter: nil)
+      (next_filter)? super(next_filter): super()
+    end
+    
+    def execute(value, context)
+      validateInputNotNull(value, context)
+      Jcsv::Pack.new(Time.at(value.getTime()/1000))
+    end
+    
+  end
+=end

@@ -169,7 +169,7 @@ class Jcsv
         @reader = CLR.new(FileReader.new(@filename), preferences, @dimensions,
                           @suppress_warnings)
       rescue java.io.IOException => e
-        p e
+        puts e
       end
       
     end

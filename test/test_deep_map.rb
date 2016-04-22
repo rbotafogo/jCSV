@@ -44,7 +44,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv file to map, chuk_size all and deep_map true" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all,
                            dimensions: [:treatment, :subject, :period], deep_map: true)
 
       # remove the :patient field from the data, as this field is already given by the
@@ -80,14 +80,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data with dimensions, mapping and filters" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all,
                            dimensions: [:treatment, :subject, :period], deep_map: true,
                            default_filter: Jcsv.int)
       
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
       reader.mapping = {:patient => false}
-      reader.filters = {:"seizure.rate" => Jcsv.double}
+      reader.filters = {:"seizure.rate" => Jcsv.float}
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
@@ -105,14 +105,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data with deep_map but chunk_size not all" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period], deep_map: true,
                            default_filter: Jcsv.int)
       
       # remove the :patient field from the data, as this field is already given by the
       # :subject field.
       reader.mapping = {:patient => false}
-      reader.filters = {:"seizure.rate" => Jcsv.double}
+      reader.filters = {:"seizure.rate" => Jcsv.float}
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
@@ -134,7 +134,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "raise exception if key is repeated" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all,
                            dimensions: [:period], deep_map: true)
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
@@ -150,7 +150,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "Show errors when dimensions are not in order or missing" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all, 
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all, 
                            dimensions: [:period, :treatment, :subject], deep_map: true)
 
       p "LOTS OF ERROR MESSAGES EXPECTED FROM HERE..."
@@ -174,7 +174,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "Suppress warnings when dimensions are not in order or missing" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all, 
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all, 
                            dimensions: [:period, :treatment, :subject], deep_map: true,
                            suppress_warnings: true)
 
@@ -201,7 +201,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "parse multi-dimension csv file to map no chunk" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map,
                            dimensions: [:treatment, :subject, :period], deep_map: true)
 
       # remove the :patient field from the data, as this field is already given by the
@@ -230,7 +230,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "read with dimension and given a block" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period], deep_map: true, 
                            default_filter: Jcsv.int)
 

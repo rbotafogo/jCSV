@@ -31,4 +31,4 @@ require_relative 'test_customer_map'
 require_relative 'test_dimensions'
 require_relative 'test_deep_map'
 require_relative 'test_critbit'
-
+require_relative 'test_filters'

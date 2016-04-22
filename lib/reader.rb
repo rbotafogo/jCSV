@@ -379,7 +379,10 @@ class Jcsv
       @headers = @reader.headers
 
       # Convert headers to symbols, unless user specifically does not want it
-      @headers.map! { |head| head.underscore.to_sym } unless @strings_as_keys
+      @headers.map! do |head|
+        (head)? head.underscore.to_sym :
+          (raise "Column is missing header")
+      end unless @strings_as_keys
 
       # Check dimensions names agains headers
       @dimensions_names.each do |dim_name|

@@ -120,7 +120,7 @@ class Jcsv
               @processed_columns[@column_mapping[i]] = s
             else
               cell = processors[i].execute(s, context)
-              cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
+              # cell = (cell.is_a? Jcsv::Pack)? cell.ruby_obj : cell
               @processed_columns[@column_mapping[i]] = cell
             end
           end

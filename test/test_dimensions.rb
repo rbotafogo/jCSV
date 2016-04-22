@@ -45,7 +45,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "read data into flat map" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
 
@@ -77,7 +77,7 @@ class CSVTest < Test::Unit::TestCase
     should "read data into flat map in chunks" do
 
       # paramenter deep_map: is not passed.  By default it is false
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
 
@@ -121,7 +121,7 @@ class CSVTest < Test::Unit::TestCase
     should "read to map in enumerable chunks" do
 
       # paramenter deep_map: is not passed.  By default it is false
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
 
@@ -167,7 +167,7 @@ class CSVTest < Test::Unit::TestCase
     should "read to map and pass to block with dimensions" do
 
       # paramenter deep_map: is not passed.  By default it is false
-      reader = Jcsv.reader("epilepsy.csv", format: :map,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
       
@@ -184,7 +184,7 @@ class CSVTest < Test::Unit::TestCase
     should "read to map and pass to block with dimensions, chunk_size > 1" do
 
       # paramenter deep_map: is not passed.  By default it is false
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: 20,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: 20,
                            dimensions: [:treatment, :subject, :period],
                            default_filter: Jcsv.int)
       
@@ -200,7 +200,7 @@ class CSVTest < Test::Unit::TestCase
 
     should "raise error if mapping a column to true" do
 
-      reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+      reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all,
                            dimensions: [:subject, :period],
                            default_filter: Jcsv.int)
 
