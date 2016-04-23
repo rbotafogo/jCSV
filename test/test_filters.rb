@@ -235,15 +235,62 @@ class CSVTest < Test::Unit::TestCase
       }
       
       map = reader.read
-      
       assert_equal(200.1 * rate, map[0][:b_jsales])
       assert_equal(199.5 * rate, map[1][:b_jsales])
       assert_equal(199.4 * rate, map[2][:b_jsales])
       assert_equal(198.9 * rate, map[3][:b_jsales])
       
-      
     end
     
-  end
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
 
+    should "gsub strings" do
+
+      reader = Jcsv.reader("../data/customer.csv", format: :map)
+
+      reader.filters = {
+        :mailing_address => Jcsv.gsub(/[eao]/, hsh: {'e' => 3, 'o' => '*', 'a' => 'A'}),
+        :first_name => Jcsv.gsub(/[aeiou]/, '*'),
+        :last_name => Jcsv.gsub(/([aeiou])/, '<\1>'),
+        :customer_no => Jcsv.gsub(/./, next_filter: Jcsv.fixnum) {|s| s.ord.to_s + ' '},
+      }
+
+      map = reader.read
+
+      assert_equal("J*hn", map[0][:first_name])
+      assert_equal("D<u>nb<a>r", map[0][:last_name])
+      assert_equal(49, map[0][:customer_no])
+      assert_equal("1600 Amphith3Atr3 PArkwAy\nM*untAin Vi3w, CA 94043\nUnit3d StAt3s",
+                   map[0][:mailing_address])
+      assert_equal("Al*c*", map[2][:first_name])
+      assert_equal("D<o>wn", map[1][:last_name])
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "process with any string functions" do
+
+      reader = Jcsv.reader("../data/customer.csv", format: :map)
+
+      reader.filters = {
+        :mailing_address => Jcsv.str(:[], 0, 10),
+        :first_name => Jcsv.str(:delete, "aeiou"),
+        :last_name => Jcsv.str(:partition, "n"),
+        :favourite_quote => Jcsv.str(:reverse,
+                                     next_filter: Jcsv.str(:prepend, "rev: ",
+                                                           next_filter: Jcsv.str(:[], 0, 20)))
+      }
+
+      map = reader.read
+      p map
+      
+    end
+
+  end
+  
 end

@@ -105,6 +105,28 @@ class Jcsv
   #
   #========================================================================================
 
+  class RBParseChar < org.supercsv.cellprocessor.ParseChar
+    # include_package "org.supercsv.cellprocessor"
+
+    def initialize(next_filter: nil)
+      (next_filter)? super(next_filter) : super()
+    end
+
+    def execute(value, context)
+      begin
+        super(value, context)
+      rescue org.supercsv.exception.SuperCsvCellProcessorException => e
+        puts e.message
+        raise FilterError
+      end
+    end
+    
+  end
+
+  #========================================================================================
+  #
+  #========================================================================================
+
   class RBInRange < org.supercsv.cellprocessor.CellProcessorAdaptor
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
@@ -167,12 +189,60 @@ class Jcsv
     end
 
     def execute(value, context)
-      # p value
-      @block.call(value, *(@args))
+      value = @block.call(value, *(@args)) if @block
+      (self.next)? self.next.execute(value, context) : value      
     end
     
   end
   
+  #========================================================================================
+  #
+  #========================================================================================
+
+  class RBGsub < org.supercsv.cellprocessor.CellProcessorAdaptor
+
+    def initialize(*args, hsh: hsh, block: nil, next_filter: nil)
+      @args = args
+      @block = block
+      @hsh = hsh
+      (next_filter)? super(next_filter): super()
+    end
+
+    def execute(value, context)
+      value = (@block)? @block.call(value, *(@args)) :
+                (@hsh.size == 0)? value.gsub(*(@args)) : value.gsub(*(@args), @hsh)
+      (self.next)? self.next.execute(value, context) : value      
+    end
+    
+  end
+
+  #========================================================================================
+  #
+  #========================================================================================
+
+  class RBStringGeneric < org.supercsv.cellprocessor.CellProcessorAdaptor
+
+    def initialize(function, *args, hsh: hsh, block: nil, next_filter: nil)
+      @function = function
+      @args = args
+      @block = block
+      @hsh = hsh
+      (next_filter)? super(next_filter): super()
+    end
+
+    def execute(value, context)
+      value = value.send(@function, *(@args), &(@block))
+      (self.next)? self.next.execute(value, context) : value      
+      
+=begin
+      value = (@block)? @block.call(value, *(@args)) :
+                (@hsh.size == 0)? value.gsub(*(@args)) : value.gsub(*(@args), @hsh)
+      (self.next)? self.next.execute(value, context) : value      
+=end
+    end
+    
+  end
+
   #========================================================================================
   #
   #========================================================================================
@@ -191,8 +261,8 @@ class Jcsv
     RBOptional.new(next_filter: next_filter)
   end
 
-  def self.char
-    ParseChar.new
+  def self.char(next_filter: nil)
+    RBParseChar.new(next_filter: next_filter)
   end
   
   def self.in_range(min, max, next_filter: nil)
@@ -207,7 +277,13 @@ class Jcsv
     RBDynamic.new(*args, block: block, next_filter: next_filter)
   end
 
+  def self.gsub(*args, hsh: {}, next_filter: nil, &block)
+    RBGsub.new(*args, hsh: hsh, block: block, next_filter: next_filter)
+  end
 
+  def self.str(function, *args, hsh: {}, next_filter: nil, &block)
+    RBStringGeneric.new(function, *args, hsh: hsh, block: block, next_filter: next_filter)
+  end
 
   
   def self.not_nil
