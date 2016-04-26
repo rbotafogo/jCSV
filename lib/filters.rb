@@ -126,32 +126,6 @@ class Jcsv
   #========================================================================================
   #
   #========================================================================================
-
-  class RBInRange < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-
-    attr_reader :min
-    attr_reader :max
-    
-    def initialize(min, max, next_filter: nil)
-      @min = min
-      @max = max
-      (next_filter.nil?)? super() : super(next_filter)
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      raise "#{@min} <= #{value} <= #{@max} does not hold" if (value < @min || value > @max)
-      (self.next)? self.next.execute(value, context) : value
-    end
-
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
   
   class RBCollector < org.supercsv.cellprocessor.CellProcessorAdaptor
     include org.supercsv.cellprocessor.ift.LongCellProcessor
@@ -231,14 +205,10 @@ class Jcsv
     end
 
     def execute(value, context)
-      value = value.send(@function, *(@args), &(@block))
+      value = (@hsh.size == 0)? value.send(@function, *(@args), &(@block)) :
+                value.send(@function, *(@args), @hsh, &(@block))
       (self.next)? self.next.execute(value, context) : value      
       
-=begin
-      value = (@block)? @block.call(value, *(@args)) :
-                (@hsh.size == 0)? value.gsub(*(@args)) : value.gsub(*(@args), @hsh)
-      (self.next)? self.next.execute(value, context) : value      
-=end
     end
     
   end
@@ -264,11 +234,7 @@ class Jcsv
   def self.char(next_filter: nil)
     RBParseChar.new(next_filter: next_filter)
   end
-  
-  def self.in_range(min, max, next_filter: nil)
-    RBInRange.new(min, max, next_filter: next_filter)
-  end
-  
+    
   def self.collector(next_filter: nil)
     RBCollector.new(next_filter: next_filter)
   end
@@ -284,42 +250,13 @@ class Jcsv
   def self.str(function, *args, hsh: {}, next_filter: nil, &block)
     RBStringGeneric.new(function, *args, hsh: hsh, block: block, next_filter: next_filter)
   end
-
-  
-  def self.not_nil
-    NotNull.new
-  end
-
-  def self.hash_mapper
-    HashMapper.new
-  end
-
   
 end
 
 require_relative 'date_filters'
 require_relative 'numeric_filters'
+require_relative 'contraints'
 
-=begin
-
-Reading	Writing	 Reading / Writing	Constraints
-ParseBigDecimal	FmtBool	   Collector	DMinMax
-ParseBool	FmtDate	   ConvertNullTo	Equals
-ParseChar	FmtNumber	HashMapper	ForbidSubStr
-ParseDate		    Optional	IsElementOf
-ParseDouble		    StrReplace	IsIncludedIn
-ParseEnum		    Token	LMinMax
-ParseInt		    Trim	NotNull
-ParseLong		    Truncate	RequireHashCode
-
-RequireSubStr
-Strlen
-StrMinMax
-StrNotNullOrEmpty
-StrRegEx
-Unique
-UniqueHashCode
-=end
 
 =begin
   #========================================================================================

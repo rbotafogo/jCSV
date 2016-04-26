@@ -65,7 +65,6 @@ class Jcsv
         filters = filters.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo} unless
           @strings_as_keys
         filters.each do |column_name, processor|
-          # column_name = column_name.to_s if column_name.is_a? Symbol
           @filters[column_name] = processor
         end
       when Array

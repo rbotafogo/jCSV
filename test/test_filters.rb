@@ -283,11 +283,53 @@ class CSVTest < Test::Unit::TestCase
         :last_name => Jcsv.str(:partition, "n"),
         :favourite_quote => Jcsv.str(:reverse,
                                      next_filter: Jcsv.str(:prepend, "rev: ",
-                                                           next_filter: Jcsv.str(:[], 0, 20)))
+                                                           next_filter: Jcsv.str(:[], 0, 20))),
+        :email => Jcsv.str(:gsub, /[eao]/, hsh: {'e' => 3, 'o' => '*', 'a' => 'A'})
       }
 
       map = reader.read
-      p map
+      assert_equal("Jhn", map[0][:first_name])
+      assert_equal(["Du", "n", "bar"], map[0][:last_name])
+      assert_equal("1600 Amphi", map[0][:mailing_address])
+      assert_equal("rev: sraW ratS - \".u", map[0][:favourite_quote])
+      assert_equal("jdunbAr@gmAil.c*m", map[0][:email])
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "raise errors on contraints" do
+
+      reader = Jcsv.reader("../data/city.csv", format: :map, col_sep: ";")
+
+      reader.filters = {
+        # :city => Jcsv.equals
+        :city => Jcsv.not_ascii?
+        # :city => Jcsv.end_with?("ka")
+      }
+
+      phones = reader.read
+      p phones
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "raise error if substring found" do
+
+      reader = Jcsv.reader("../data/customer.csv", format: :map)
+
+      reader.filters = {
+        :first_name => Jcsv.forbid_substrings(["jh", "paw", "Jp"]),
+        :last_name => Jcsv.is_element_of(["Dunbar", "Down", "Wunderland", "Jobs"])
+      }
+
+      customers = reader.read
+      p customers
       
     end
 
