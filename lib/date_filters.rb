@@ -33,7 +33,7 @@ class Jcsv
   #========================================================================================
   
   class RBParseHTTPDate < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -42,7 +42,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.httpdate(value, @start)
+      exec_next(DateTime.httpdate(value, @start), context)
     end
 
   end
@@ -52,7 +52,7 @@ class Jcsv
   #========================================================================================
   
   class RBParseISO8601 < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -61,7 +61,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.iso8601(value, @start)
+      exec_next(DateTime.iso8601(value, @start), context)
     end
 
   end
@@ -72,6 +72,7 @@ class Jcsv
 
   class RBParseJD < org.supercsv.cellprocessor.CellProcessorAdaptor
     include org.supercsv.cellprocessor.ift.LongCellProcessor
+    include NextFilter
     
     def initialize(next_filter: nil)
       (next_filter)? super(next_filter): super()
@@ -79,7 +80,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.jd(value)
+      exec_next(DateTime.jd(value), context)
     end
 
   end
@@ -89,6 +90,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseJisx0301 < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -97,7 +99,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.jisx0301(value, @start)
+      exec_next(DateTime.jisx0301(value, @start), context)
     end
 
   end
@@ -107,6 +109,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseDate < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -115,7 +118,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.parse(value, @start)
+      exec_next(DateTime.parse(value, @start), context)
     end
 
   end
@@ -125,6 +128,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseRFC2822 < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -133,7 +137,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.rfc2822(value, @start)
+      exec_next(DateTime.rfc2822(value, @start), context)
     end
 
   end
@@ -143,6 +147,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseRFC3339 < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -151,7 +156,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.rfc3339(value, @start)
+      exec_next(DateTime.rfc3339(value, @start), context)
     end
 
   end
@@ -161,6 +166,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseRFC822 < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -169,7 +175,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.rfc822(value, @start)
+      exec_next(DateTime.rfc822(value, @start), context)
     end
 
   end
@@ -179,6 +185,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseStrptime < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(format, start, next_filter: nil)
       @format = format
@@ -188,7 +195,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.strptime(value, @format, @start)
+      exec_next(DateTime.strptime(value, @format, @start), context)
     end
 
   end
@@ -198,6 +205,7 @@ class Jcsv
   #========================================================================================
 
   class RBParseXmlSchema < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
     def initialize(start, next_filter: nil)
       @start = start
@@ -206,7 +214,7 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      DateTime.xmlschema(value, @start)
+      exec_next(DateTime.xmlschema(value, @start), context)
     end
 
   end

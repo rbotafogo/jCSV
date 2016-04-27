@@ -33,15 +33,15 @@ class Jcsv
   #========================================================================================
   
   class RBParseInt < org.supercsv.cellprocessor.ParseInt
-    # include_package "org.supercsv.cellprocessor"
+    include NextFilter
 
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter) : super()
+    def initialize
+      super()
     end
 
     def execute(value, context)
       begin
-        super(value, context)
+        exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
         puts e.message
         raise FilterError
@@ -55,15 +55,15 @@ class Jcsv
   #========================================================================================
   
   class RBParseLong < org.supercsv.cellprocessor.ParseLong
-    # include_package "org.supercsv.cellprocessor"
+    include NextFilter
 
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter) : super()
+    def initialize
+      super()
     end
 
     def execute(value, context)
       begin
-        super(value, context)
+        exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
         puts e.message
         raise FilterError
@@ -77,18 +77,17 @@ class Jcsv
   #========================================================================================
 
   class RBParseFloat < org.supercsv.cellprocessor.CellProcessorAdaptor
-
+    include NextFilter
+    
     attr_reader :locale
     attr_reader :dfs
     
-    def initialize(locale, next_filter: nil)
-      
+    def initialize(locale)
       @locale = locale
       @dfs = DFSymbols.new(locale)
       @grouping_separator = @dfs.grouping_separator
       @decimal_separator = @dfs.decimal_separator
-      (next_filter)? super(next_filter): super()
-      
+      super()
     end
     
     def execute(value, context)
@@ -96,7 +95,7 @@ class Jcsv
       # raise "BigDecimal expects a String as input not #{value}" if !(value.is_a? String)
       value = value.gsub(@grouping_separator.chr, "").
               gsub(@decimal_separator.chr, ".").to_f
-      (self.next)? self.next.execute(value, context) : value
+      exec_next(value, context)
     end
     
   end
@@ -106,15 +105,15 @@ class Jcsv
   #========================================================================================
   
   class RBParseBignum < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
+    include NextFilter
     
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
+    def initialize
+      super()
     end
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      (self.next)? self.next.execute(value.to_i, context) : value.to_i
+      exec_next(value.to_i, context)
     end
 
   end
@@ -124,15 +123,15 @@ class Jcsv
   #========================================================================================
   
   class RBParseComplex < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
+    include NextFilter
     
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
+    def initialize
+      super()
     end
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      (self.next)? self.next.execute(value.to_c, context) : value.to_c
+      exec_next(value.to_c, context)
     end
 
   end
@@ -142,15 +141,15 @@ class Jcsv
   #========================================================================================
   
   class RBParseRational < org.supercsv.cellprocessor.CellProcessorAdaptor
-    # include_package "org.supercsv.cellprocessor.ift"
+    include NextFilter
     
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
+    def initialize
+      super()
     end
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      (self.next)? self.next.execute(value.to_r, context) : value.to_r
+      exec_next(value.to_r, context)
     end
 
   end
@@ -160,18 +159,17 @@ class Jcsv
   #========================================================================================
 
   class RBParseBigDecimal < org.supercsv.cellprocessor.CellProcessorAdaptor
-
+    include NextFilter
+    
     attr_reader :locale
     attr_reader :dfs
     
-    def initialize(locale, next_filter: nil)
-      
+    def initialize(locale)
       @locale = locale
       @dfs = DFSymbols.new(locale)
       @grouping_separator = @dfs.grouping_separator
       @decimal_separator = @dfs.decimal_separator
-      (next_filter)? super(next_filter): super()
-      
+      super()
     end
     
     def execute(value, context)
@@ -179,7 +177,7 @@ class Jcsv
       # raise "BigDecimal expects a String as input not #{value}" if !(value.is_a? String)
       bd = BigDecimal.new(value.gsub(@grouping_separator.chr, "").
                            gsub(@decimal_separator.chr, "."))
-      (self.next)? self.next.execute(bd, context) : bd  
+      exec_next(bd, context)
     end
     
   end
@@ -188,32 +186,32 @@ class Jcsv
   #
   #========================================================================================
 
-  def self.int(next_filter: nil)
-    RBParseInt.new(next_filter: next_filter)
+  def self.int
+    RBParseInt.new
   end
 
-  def self.long(next_filter: nil)
-    RBParseLong.new(next_filter: next_filter)
+  def self.long
+    RBParseLong.new
   end
 
-  def self.fixnum(next_filter: nil)
-    RBParseBignum.new(next_filter: next_filter)
+  def self.fixnum
+    RBParseBignum.new
   end
 
-  def self.float(locale = Locale.default, next_filter: nil)
-    RBParseFloat.new(locale, next_filter: next_filter)
+  def self.float(locale = Locale.default)
+    RBParseFloat.new(locale)
   end
 
-  def self.complex(next_filter: nil)
-    RBParseComplex.new(next_filter: next_filter)
+  def self.complex
+    RBParseComplex.new
   end
 
-  def self.rational(next_filter: nil)
-    RBParseRational.new(next_filter: next_filter)
+  def self.rational
+    RBParseRational.new
   end
   
-  def self.bignum(next_filter: nil)
-    RBParseBignum.new(next_filter: next_filter)
+  def self.bignum
+    RBParseBignum.new
   end
 
   #---------------------------------------------------------------------------------------
@@ -227,8 +225,8 @@ class Jcsv
   # parsing.
   #---------------------------------------------------------------------------------------
   
-  def self.big_decimal(locale = Locale.default, next_filter: nil)
-    Jcsv::RBParseBigDecimal.new(locale, next_filter: next_filter)
+  def self.big_decimal(locale = Locale.default)
+    Jcsv::RBParseBigDecimal.new(locale)
   end
   
 end

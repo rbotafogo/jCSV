@@ -33,20 +33,21 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
     attr_reader :min
     attr_reader :max
     
-    def initialize(min, max, next_filter: nil)
+    def initialize(min, max)
       @min = min
       @max = max
-      (next_filter.nil?)? super() : super(next_filter)
+      super()
     end
     
     def execute(value, context)
       validateInputNotNull(value, context)
       raise "#{@min} <= #{value} <= #{@max} does not hold" if (value < @min || value > @max)
-      (self.next)? self.next.execute(value, context) : value
+      exec_next(value, context)
     end
     
   end
@@ -59,12 +60,13 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
     attr_reader :substrings
     
-    def initialize(substrings, next_filter: nil)
+    def initialize(substrings)
       @substrings = substrings
-      (next_filter.nil?)? super() : super(next_filter)
+      super()
     end
     
     def execute(value, context)
@@ -72,7 +74,7 @@ class Jcsv
       substrings.each do |sub|
         raise "Substring #{sub} found in #{value}" if value.include?(sub)
       end
-      (self.next)? self.next.execute(value, context) : value
+      exec_next(value, context)
     end
     
   end
@@ -85,12 +87,13 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
     attr_reader :value
     
-    def initialize(value = nil, next_filter: nil)
+    def initialize(value = nil)
       @value = value
-      (next_filter.nil?)? super() : super(next_filter)
+      super()
     end
     
     def execute(value, context)
@@ -98,7 +101,7 @@ class Jcsv
       @value ||= value # if value not initialized then use the first read value for equals
       
       raise "Value '#{value}' is not equal to '#{@value}'" if (value != @value)
-      (self.next)? self.next.execute(value, context) : value
+      exec_next(value, context)
     end
 
   end
@@ -108,14 +111,15 @@ class Jcsv
   #========================================================================================
 
   class RBNotNil < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
-    def initialize(next_filter: nil)
-      (next_filter.nil?)? super() : super(next_filter)
+    def initialize
+      super()
     end
     
     def execute(value, context)
       raise "Value is nil" if (value.nil?)
-      (self.next)? self.next.execute(value, context) : value
+      exec_next(value, context)
     end
 
   end
@@ -128,18 +132,19 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
     
     attr_reader :strings
     
-    def initialize(strings, next_filter: nil)
+    def initialize(strings)
       @strings = strings
-      (next_filter.nil?)? super() : super(next_filter)
+      super()
     end
     
     def execute(value, context)
       validateInputNotNull(value, context)
       raise "Value #{value} not element of #{@strings}" if !@strings.include?(value)
-      (self.next)? self.next.execute(value, context) : value
+      exec_next(value, context)
     end
     
   end
@@ -150,18 +155,19 @@ class Jcsv
 
   class RBStrContraints < org.supercsv.cellprocessor.CellProcessorAdaptor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
-    def initialize(function, *args, check: true, next_filter: nil)
+    def initialize(function, *args, check: true)
       @function = function
       @args = args
       @check = check
-      (next_filter)? super(next_filter): super()
+      super()
     end
 
     def execute(value, context)
       truth = value.send(@function, *(@args))
       raise "Contraint #{@function} with value #{value} is #{truth}" if truth == @check
-      (self.next)? self.next.execute(value, context) : value  
+      exec_next(value, context)
     end
 
   end
@@ -170,48 +176,48 @@ class Jcsv
   #
   #========================================================================================
 
-  def self.in_range(min, max, next_filter: nil)
-    RBInRange.new(min, max, next_filter: next_filter)
+  def self.in_range(min, max)
+    RBInRange.new(min, max)
   end
 
-  def self.equals(value = nil, next_filter: nil)
-    RBEquals.new(value, next_filter: next_filter)
+  def self.equals(value = nil)
+    RBEquals.new(value)
   end
   
-  def self.ascii_only?(next_filter: nil)
-    RBStrContraints.new(:ascii_only?, next_filter: next_filter)
+  def self.ascii_only?
+    RBStrContraints.new(:ascii_only?)
   end
 
-  def self.not_ascii?(next_filter: nil)
-    RBStrContraints.new(:ascii_only?, check: false, next_filter: next_filter)
+  def self.not_ascii?
+    RBStrContraints.new(:ascii_only?, check: false)
   end
 
-  def self.empty?(next_filter: nil)
-    RBStrContraints.new(:empty?, next_filter: next_filter)
+  def self.empty?
+    RBStrContraints.new(:empty?)
   end
 
-  def self.end_with?(*args, next_filter: nil)
-    RBStrContraints.new(:end_with?, *args, next_filter: next_filter)
+  def self.end_with?(*args)
+    RBStrContraints.new(:end_with?, *args)
   end
   
-  def self.include?(*args, next_filter: nil)
-    RBStrContraints.new(:include?, *args, next_filter: next_filter)
+  def self.include?(*args)
+    RBStrContraints.new(:include?, *args)
   end
 
-  def self.start_with?(*args, next_filter: nil)
-    RBStrContraints.new(:start_with?, *args, next_filter: next_filter)
+  def self.start_with?(*args)
+    RBStrContraints.new(:start_with?, *args)
   end
 
-  def self.not_nil(next_filter: nil)
-    RBNotNil.new(next_filter: next_filter)
+  def self.not_nil
+    RBNotNil.new
   end
 
-  def self.forbid_substrings(substrings, next_filter: next_filter)
-    RBForbidSubstrings.new(substrings, next_filter: next_filter)
+  def self.forbid_substrings(substrings)
+    RBForbidSubstrings.new(substrings)
   end
 
-  def self.is_element_of(strings, next_filter: next_filter)
-    RBIsElementOf.new(strings, next_filter: next_filter)
+  def self.is_element_of(strings)
+    RBIsElementOf.new(strings)
   end
 
 end

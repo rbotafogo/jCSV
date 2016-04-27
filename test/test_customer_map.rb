@@ -88,8 +88,8 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/customer.csv", format: :map, default_filter: Jcsv.not_nil)
 
       # Set numberOfKids and married as optional, otherwise an exception will be raised
-      reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                        :married => Jcsv.optional(next_filter: Jcsv.bool),
+      reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                        :married => Jcsv.optional >> Jcsv.bool,
                         :loyalty_points => Jcsv.long,
                         :customer_no => Jcsv.int,
                         :birth_date => Jcsv.date("dd/MM/yyyy")}
@@ -138,7 +138,7 @@ class CSVTest < Test::Unit::TestCase
                            headers: true, strings_as_keys: true)
       
       # Set numberOfKids and married as optional, otherwise an exception will be raised
-      reader.filters = {"numberOfKids" => Jcsv.optional(next_filter: Jcsv.int),
+      reader.filters = {"numberOfKids" => Jcsv.optional >> Jcsv.int,
                         "loyaltyPoints" => Jcsv.long,
                         "customerNo" => Jcsv.int,
                         "birthDate" => Jcsv.date("dd/mm/yyyy")}
@@ -161,8 +161,8 @@ class CSVTest < Test::Unit::TestCase
                            strings_as_keys: true)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {"numberOfKids" => Jcsv.optional(next_filter: Jcsv.int),
-                        "married" => Jcsv.optional(next_filter: Jcsv.bool),
+      reader.filters = {"numberOfKids" => Jcsv.optional >> Jcsv.int,
+                        "married" => Jcsv.optional >> Jcsv.bool,
                         "customerNo" => Jcsv.int}
       
       iter = reader.each

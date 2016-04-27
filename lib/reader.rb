@@ -439,3 +439,56 @@ end
 require_relative 'list_reader'
 require_relative 'map_reader'
 require_relative 'vector_reader'
+
+
+=begin
+
+Dialect: "escaped"
+
+  delimiter   = ','       skipinitialspace = 0
+  doublequote = 0         quoting          = QUOTE_NONE
+  quotechar   = '"'       lineterminator   = '\r\n'
+  escapechar  = '\\'
+
+col1,0,10/00/2010,Contains special chars: \" ' \, to be parsed
+col1,1,10/01/2010,Contains special chars: \" ' \, to be parsed
+col1,2,10/02/2010,Contains special chars: \" ' \, to be parsed
+
+
+Dialect: "excel"
+
+  delimiter   = ','       skipinitialspace = 0
+  doublequote = 1         quoting          = QUOTE_MINIMAL
+  quotechar   = '"'       lineterminator   = '\r\n'
+  escapechar  = None
+
+col1,0,10/00/2010,"Contains special chars: "" ' , to be parsed"
+col1,1,10/01/2010,"Contains special chars: "" ' , to be parsed"
+col1,2,10/02/2010,"Contains special chars: "" ' , to be parsed"
+
+
+Dialect: "excel-tab"
+
+  delimiter   = '\t'      skipinitialspace = 0
+  doublequote = 1         quoting          = QUOTE_MINIMAL
+  quotechar   = '"'       lineterminator   = '\r\n'
+  escapechar  = None
+
+col1    0       10/00/2010      "Contains special chars: "" '    to be parsed"
+col1    1       10/01/2010      "Contains special chars: "" '    to be parsed"
+col1    2       10/02/2010      "Contains special chars: "" '    to be parsed"
+
+
+Dialect: "singlequote"
+
+  delimiter   = ','       skipinitialspace = 0
+  doublequote = 1         quoting          = QUOTE_ALL
+  quotechar   = "'"       lineterminator   = '\r\n'
+  escapechar  = None
+
+'col1','0','10/00/2010','Contains special chars: " '' , to be parsed'
+'col1','1','10/01/2010','Contains special chars: " '' , to be parsed'
+'col1','2','10/02/2010','Contains special chars: " '' , to be parsed'
+
+=end
+

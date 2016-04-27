@@ -127,8 +127,8 @@ class CSVTest < Test::Unit::TestCase
       parser = Jcsv.reader("../data/customer.csv", default_filter: Jcsv.not_nil)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      parser.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                        :married => Jcsv.optional(next_filter: Jcsv.bool),
+      parser.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                        :married => Jcsv.optional >> Jcsv.bool,
                         :customer_no => Jcsv.int,
                         :birth_date => Jcsv.date("dd/MM/yyyy")}
       
@@ -158,8 +158,8 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/customer.csv", chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                        :married => Jcsv.optional(next_filter: Jcsv.bool),
+      reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                        :married => Jcsv.optional >> Jcsv.bool,
                         :customer_no => Jcsv.int}
 
       reader.each do |line_no, row_no, chunk, headers|
@@ -224,8 +224,8 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/customer.csv", chunk_size: :all)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                        :married => Jcsv.optional(next_filter: Jcsv.bool),
+      reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                        :married => Jcsv.optional >> Jcsv.bool,
                         :customer_no => Jcsv.int}
     end
 
@@ -238,8 +238,8 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/customer.csv", chunk_size: 2)
 
       # Add filters, so that we get 'objects' instead of strings for filtered fields
-      reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                        :married => Jcsv.optional(next_filter: Jcsv.bool),
+      reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                        :married => Jcsv.optional >> Jcsv.bool, 
                         :customer_no => Jcsv.int}
 
       # Method each without a block returns an enumerator
@@ -373,8 +373,8 @@ class CSVTest < Test::Unit::TestCase
       # reading the headers returns false
       # assert_equal(false, reader.headers)
 
-      reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                        :married => Jcsv.optional(next_filter: Jcsv.bool),
+      reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                        :married => Jcsv.optional >> Jcsv.bool,
                         :customer_no => Jcsv.int}
 
       # Mapping allows reordering of columns.  In this example, column 0 (:customerno)

@@ -106,7 +106,7 @@ class CSVTest < Test::Unit::TestCase
       # supports int and long filters, but in Ruby it is better to use the fixnum
       # filter
       reader.filters = {
-        :int => Jcsv.int(next_filter: Jcsv.in_range(200, 300)),
+        :int => Jcsv.int >> Jcsv.in_range(200, 300),
         :double => Jcsv.float,
         :double2 => Jcsv.float(Locale::US),
         :long => Jcsv.long,
@@ -122,7 +122,7 @@ class CSVTest < Test::Unit::TestCase
         :name => Jcsv.in_range("P", "Q") }
 
       filters = reader.read[0]
-      p filters
+      # p filters
 
     end
 
@@ -140,7 +140,7 @@ class CSVTest < Test::Unit::TestCase
         :iso8601_1 => Jcsv.iso8601(Date::ENGLAND),
         :iso8601_2 => Jcsv.iso8601(Date::GREGORIAN),
         :iso8601_3 => Jcsv.iso8601(Date::ITALY),     # Date::ITALY is the default start date
-        :jd_1 => Jcsv.int(next_filter: Jcsv.jd),
+        :jd_1 => Jcsv.int >> Jcsv.jd,
         :jisx0301 => Jcsv.jisx0301,
         :date1 => Jcsv.date,
         :date2 => Jcsv.date,
@@ -191,9 +191,7 @@ class CSVTest < Test::Unit::TestCase
       reader.filters = {
         :first_name => first_names,
         :last_name => last_names,
-        :number_of_kids => Jcsv.convert_nil_to(-1,
-                                               next_filter: Jcsv.fixnum(
-                                                 next_filter: kids))
+        :number_of_kids => Jcsv.convert_nil_to(-1) >> Jcsv.fixnum >> kids
       }
       
       map = reader.read
@@ -212,13 +210,14 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/customer.csv", format: :map, chunk_size: 2,
                            default_filter: Jcsv.not_nil)
       reader.filters = {
-        :number_of_kids => Jcsv.optional(next_filter: Jcsv.fixnum),
+        :number_of_kids => Jcsv.optional >> Jcsv.fixnum,
         :married => Jcsv.optional
       }
       map = reader.read
+      # p map
       
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -230,8 +229,8 @@ class CSVTest < Test::Unit::TestCase
       rate = 3.75      # dollar to reais convertion rate
       
       reader.filters = {
-        :b_jsales => Jcsv.float(Locale::US,
-                                next_filter: Jcsv.dynamic { |value| value * rate })
+        :b_jsales => Jcsv.optional >> Jcsv.float(Locale::US) >>
+                     Jcsv.in_range(0, 300) >> Jcsv.dynamic { |value| value * rate }
       }
       
       map = reader.read
@@ -241,7 +240,7 @@ class CSVTest < Test::Unit::TestCase
       assert_equal(198.9 * rate, map[3][:b_jsales])
       
     end
-    
+
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------
@@ -254,7 +253,7 @@ class CSVTest < Test::Unit::TestCase
         :mailing_address => Jcsv.gsub(/[eao]/, hsh: {'e' => 3, 'o' => '*', 'a' => 'A'}),
         :first_name => Jcsv.gsub(/[aeiou]/, '*'),
         :last_name => Jcsv.gsub(/([aeiou])/, '<\1>'),
-        :customer_no => Jcsv.gsub(/./, next_filter: Jcsv.fixnum) {|s| s.ord.to_s + ' '},
+        :customer_no => Jcsv.gsub(/./) {|s| s.ord.to_s + ' '} >> Jcsv.fixnum
       }
 
       map = reader.read
@@ -281,9 +280,8 @@ class CSVTest < Test::Unit::TestCase
         :mailing_address => Jcsv.str(:[], 0, 10),
         :first_name => Jcsv.str(:delete, "aeiou"),
         :last_name => Jcsv.str(:partition, "n"),
-        :favourite_quote => Jcsv.str(:reverse,
-                                     next_filter: Jcsv.str(:prepend, "rev: ",
-                                                           next_filter: Jcsv.str(:[], 0, 20))),
+        :favourite_quote => Jcsv.str(:reverse) >> Jcsv.str(:prepend, "rev: ") >>
+                            Jcsv.str(:[], 0, 20),
         :email => Jcsv.str(:gsub, /[eao]/, hsh: {'e' => 3, 'o' => '*', 'a' => 'A'})
       }
 
@@ -311,7 +309,7 @@ class CSVTest < Test::Unit::TestCase
       }
 
       phones = reader.read
-      p phones
+      # p phones
       
     end
 
@@ -329,7 +327,7 @@ class CSVTest < Test::Unit::TestCase
       }
 
       customers = reader.read
-      p customers
+      # p customers
       
     end
 

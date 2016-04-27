@@ -24,11 +24,6 @@
 require 'bigdecimal'
 require_relative 'locale'
 
-# class Java::OrgSupercsvCellprocessor::CellProcessorAdaptor
-class Java::OrgSupercsvCellprocessor::CellProcessorAdaptor
-  field_reader :next
-end
-
 class Jcsv
   include_package "org.supercsv.cellprocessor"
   include_package "org.supercsv.cellprocessor.constraint"
@@ -41,18 +36,58 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBParseBool < org.supercsv.cellprocessor.ParseBool
+  module NextFilter
+
+    # last_filter is a class variable that points to the last filter in the sequence of
+    # filters.  It is necessary to build the linked list of filters
+    class << self
+      attr_accessor :last_filter
+    end
+
+    # This object's next filter
+    attr_accessor :next_filter
+
+    #---------------------------------------------------------------------------------------
+    # Method >> is used to link one filter to the next filter.  Basically we keep a linked
+    # list of filters.
+    #---------------------------------------------------------------------------------------
+   
+    def >>(next_filter)
+      if (@next_filter.nil?)
+        NextFilter.last_filter = @next_filter = next_filter
+      else
+        NextFilter.last_filter.next_filter = next_filter
+        NextFilter.last_filter = next_filter
+      end
+      self
+    end
     
-    def initialize(true_values, false_values, ignore_case, next_filter)
+    #---------------------------------------------------------------------------------------
+    # Executes the next filter
+    #---------------------------------------------------------------------------------------
+
+    def exec_next(value, context)
+      @next_filter? @next_filter.execute(value, context) : value      
+    end
+    
+  end
+  
+  #========================================================================================
+  #
+  #========================================================================================
+
+  class RBParseBool < org.supercsv.cellprocessor.ParseBool
+    include NextFilter
+    
+    def initialize(true_values, false_values, ignore_case)
       true_values = true_values.to_java(:string)
       false_values = false_values.to_java(:string)
-      (next_filter)? super(true_values, false_values, ignore_case, next_filter) :
-        super(true_values, false_values, ignore_case)
+      super(true_values, false_values, ignore_case)
     end
     
     def execute(value, context)
       begin
-        super(value, context)
+        exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
         puts e.message
         raise FilterError
@@ -70,17 +105,18 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
     attr_reader :value
     
-    def initialize(value, next_filter: nil)
+    def initialize(value)
       @value = value
-      (next_filter)? super(next_filter): super()
+      super()
     end
     
     def execute(value, context)
       val = (value)? value : @value
-      (self.next)? self.next.execute(val, context) : val      
+      exec_next(val, context)
     end
 
   end
@@ -90,13 +126,14 @@ class Jcsv
   #========================================================================================
 
   class RBOptional < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
     
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
+    def initialize
+      super()
     end
     
     def execute(value, context)
-      (value && self.next)? self.next.execute(value, context) : value      
+      (value)? exec_next(value, context) : value      
     end
 
   end
@@ -106,15 +143,15 @@ class Jcsv
   #========================================================================================
 
   class RBParseChar < org.supercsv.cellprocessor.ParseChar
-    # include_package "org.supercsv.cellprocessor"
+    include NextFilter
 
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter) : super()
+    def initialize
+      super()
     end
 
     def execute(value, context)
       begin
-        super(value, context)
+        exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
         puts e.message
         raise FilterError
@@ -131,18 +168,19 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
     attr_reader :collection
     
-    def initialize(next_filter: nil)
+    def initialize
       @collection = []
-      (next_filter)? super(next_filter): super()
+      super()
     end
     
     def execute(value, context)
       validateInputNotNull(value, context)
       @collection << value
-      (self.next)? self.next.execute(value, context) : value      
+      exec_next(value, context)
     end
 
   end
@@ -155,16 +193,17 @@ class Jcsv
     include org.supercsv.cellprocessor.ift.LongCellProcessor
     include org.supercsv.cellprocessor.ift.DoubleCellProcessor
     include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
 
-    def initialize(*args, block: nil, next_filter: nil)
+    def initialize(*args, block: nil)
       @args = args
       @block = block
-      (next_filter)? super(next_filter): super()
+      super()
     end
 
     def execute(value, context)
       value = @block.call(value, *(@args)) if @block
-      (self.next)? self.next.execute(value, context) : value      
+      exec_next(value, context)
     end
     
   end
@@ -174,18 +213,19 @@ class Jcsv
   #========================================================================================
 
   class RBGsub < org.supercsv.cellprocessor.CellProcessorAdaptor
-
-    def initialize(*args, hsh: hsh, block: nil, next_filter: nil)
+    include NextFilter
+    
+    def initialize(*args, hsh: hsh, block: nil)
       @args = args
       @block = block
       @hsh = hsh
-      (next_filter)? super(next_filter): super()
+      super()
     end
 
     def execute(value, context)
       value = (@block)? @block.call(value, *(@args)) :
                 (@hsh.size == 0)? value.gsub(*(@args)) : value.gsub(*(@args), @hsh)
-      (self.next)? self.next.execute(value, context) : value      
+      exec_next(value, context)
     end
     
   end
@@ -195,20 +235,20 @@ class Jcsv
   #========================================================================================
 
   class RBStringGeneric < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include NextFilter
 
-    def initialize(function, *args, hsh: hsh, block: nil, next_filter: nil)
+    def initialize(function, *args, hsh: hsh, block: nil)
       @function = function
       @args = args
       @block = block
       @hsh = hsh
-      (next_filter)? super(next_filter): super()
+      super()
     end
 
     def execute(value, context)
       value = (@hsh.size == 0)? value.send(@function, *(@args), &(@block)) :
                 value.send(@function, *(@args), @hsh, &(@block))
-      (self.next)? self.next.execute(value, context) : value      
-      
+      exec_next(value, context)
     end
     
   end
@@ -219,36 +259,36 @@ class Jcsv
 
   def self.bool(true_values: ["true", "1", "y", "t"],
                 false_values: ["false", "n", "0", "f"],
-                ignore_case: true, next_filter: nil)
-    RBParseBool.new(true_values, false_values, ignore_case, next_filter)
+                ignore_case: true)
+    RBParseBool.new(true_values, false_values, ignore_case)
   end
 
-  def self.convert_nil_to(value, next_filter: nil)
-    RBConvertNilTo.new(value, next_filter: next_filter)
+  def self.convert_nil_to(value)
+    RBConvertNilTo.new(value)
   end
 
-  def self.optional(next_filter: nil)
-    RBOptional.new(next_filter: next_filter)
+  def self.optional
+    RBOptional.new
   end
 
-  def self.char(next_filter: nil)
-    RBParseChar.new(next_filter: next_filter)
+  def self.char
+    RBParseChar.new
   end
     
-  def self.collector(next_filter: nil)
-    RBCollector.new(next_filter: next_filter)
+  def self.collector
+    RBCollector.new
   end
 
-  def self.dynamic(*args, next_filter: nil, &block)
-    RBDynamic.new(*args, block: block, next_filter: next_filter)
+  def self.dynamic(*args, &block)
+    RBDynamic.new(*args, block: block)
   end
 
-  def self.gsub(*args, hsh: {}, next_filter: nil, &block)
-    RBGsub.new(*args, hsh: hsh, block: block, next_filter: next_filter)
+  def self.gsub(*args, hsh: {}, &block)
+    RBGsub.new(*args, hsh: hsh, block: block)
   end
 
-  def self.str(function, *args, hsh: {}, next_filter: nil, &block)
-    RBStringGeneric.new(function, *args, hsh: hsh, block: block, next_filter: next_filter)
+  def self.str(function, *args, hsh: {}, &block)
+    RBStringGeneric.new(function, *args, hsh: hsh, block: block)
   end
   
 end
@@ -259,36 +299,8 @@ require_relative 'contraints'
 
 
 =begin
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class Pack
-    
-    attr_reader :ruby_obj
-    
-    def initialize(val)
-      @ruby_obj = val
-    end
-    
-  end
-  
-  #========================================================================================
-  #
-  #========================================================================================
-
-  class RBParseDate < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include_package "org.supercsv.cellprocessor.ift"
-    include DateCellProcessor
-    
-    def initialize(next_filter: nil)
-      (next_filter)? super(next_filter): super()
-    end
-    
-    def execute(value, context)
-      validateInputNotNull(value, context)
-      Jcsv::Pack.new(Time.at(value.getTime()/1000))
-    end
-    
-  end
+# class Java::OrgSupercsvCellprocessor::CellProcessorAdaptor
+class Java::OrgSupercsvCellprocessor::CellProcessorAdaptor
+  field_reader :next
+end
 =end
