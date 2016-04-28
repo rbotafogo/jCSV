@@ -229,7 +229,7 @@ class Jcsv
       @surrounding_space_need_quotes = surrounding_space_need_quotes
       @quote_char = quote_char
       @chunk_size = (chunk_size == :all)? 1.0/0.0 : chunk_size
-      @deep_map = deep_map
+      @deep_map = (@format == :list)? false : deep_map
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
       @suppress_warnings = suppress_warnings

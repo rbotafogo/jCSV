@@ -152,7 +152,7 @@ require 'jcsv'
 require 'pp'
 
 # Create a new reader by passing the filename to be parsed
-reader = Jcsv.reader("customer.csv")
+reader = Jcsv.reader("../data/customer.csv")
 
 # now read the whole csv file and stores it in the 'content' variable
 content = reader.read
@@ -188,7 +188,7 @@ headers without reading the rest of the file:
 EOT
 
 console(<<-EOT)
-reader = Jcsv.reader("customer.csv", strings_as_keys: true)
+reader = Jcsv.reader("../data/customer.csv", strings_as_keys: true)
 p reader.headers
 EOT
 
@@ -204,7 +204,7 @@ code(<<-EOT)
 # of the record),
 # row_no, row and the headers.
 # Read file 'customer.csv'.  File has headers (this is the default) and we keep the keys as string
-reader = Jcsv.reader("customer.csv", headers: true, strings_as_keys: true)
+reader = Jcsv.reader("../data/customer.csv", headers: true, strings_as_keys: true)
 EOT
 
 comment_code(<<-EOT)
@@ -218,7 +218,7 @@ end
 EOT
 
 #console(<<-EOT)
-reader = Jcsv.reader("customer.csv", strings_as_keys: true)
+reader = Jcsv.reader("../data/customer.csv", strings_as_keys: true)
 reader.read do |line_no, row_no, row, headers|
   puts "line number: #{line_no}, row number: #{row_no}"
   headers.each_with_index do |head, i|
@@ -238,7 +238,7 @@ an empty field for 'married' and 'number of kids".  So, we should expect this re
 EOT
 
 console(<<-EOT)
-parser = Jcsv.reader("customer.csv", default_filter: Jcsv.not_nil)
+parser = Jcsv.reader("../data/customer.csv", default_filter: Jcsv.not_nil)
 parser.read
 EOT
 
@@ -252,11 +252,11 @@ with: Jcsv.optional(Jcsv.int) and Jcsv.optional(Jcsv.bool):
 EOT
 
 code(<<-EOT)
-parser = Jcsv.reader("customer.csv", default_filter: Jcsv.not_nil)
+parser = Jcsv.reader("../data/customer.csv", default_filter: Jcsv.not_nil)
 # Add filters, so that we get 'objects' instead of strings for filtered fields
 
-parser.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+parser.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                  :married => Jcsv.optional >> Jcsv.bool, 
                   :customer_no => Jcsv.int,
                   :birth_date => Jcsv.date("dd/MM/yyyy")}
 
@@ -281,11 +281,11 @@ EOT
 
 code(<<-EOT)
 # Read chunks of the file.  In this case, we are breaking the file in chunks of 2
-reader = Jcsv.reader("customer.csv", chunk_size: 2)
+reader = Jcsv.reader("../data/customer.csv", chunk_size: 2)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                  :married => Jcsv.optional >> Jcsv.bool,
                   :customer_no => Jcsv.int}
 
 content = reader.read
@@ -306,11 +306,11 @@ EOT
 
 code(<<-EOT)
 # Read chunks of the file.  In this case, we are breaking the file in chunks of 2
-reader = Jcsv.reader("customer.csv", chunk_size: 3)
+reader = Jcsv.reader("../data/customer.csv", chunk_size: 3)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                  :married => Jcsv.optional >> Jcsv.bool, 
                   :customer_no => Jcsv.int}
 EOT
 
@@ -332,11 +332,11 @@ the reader we call method each without any blocks:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv", chunk_size: 2)
+reader = Jcsv.reader("../data/customer.csv", chunk_size: 2)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                  :married => Jcsv.optional >> Jcsv.bool, 
                   :customer_no => Jcsv.int}
 
 # Method each without a block returns an enumerator
@@ -372,11 +372,11 @@ we need to read row[2][1].
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv")
+reader = Jcsv.reader("../data/customer.csv")
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                  :married => Jcsv.optional >> Jcsv.bool, 
                   :customer_no => Jcsv.int}
 
 # Method each without a block returns an enumerator
@@ -399,7 +399,7 @@ mapping.  Bellow an example where the columns :customerno, :mailingaddress and
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv")
+reader = Jcsv.reader("../data/customer.csv")
 
 # Add mapping.  When column is mapped to false, it will not be retrieved from the
 # file, improving time and speed efficiency
@@ -430,11 +430,11 @@ mapping:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv")
+reader = Jcsv.reader("../data/customer.csv")
 
 # Add filters...
-reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int, 
+                  :married => Jcsv.optional >> Jcsv.bool,
                   :customer_no => Jcsv.int}
 
 # Mapping allows reordering of columns.  In this example, column 0 (:customerno)
@@ -466,7 +466,7 @@ an array of arrays.  Reading to map is very easy and only requires passing one a
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv", format: :map)
+reader = Jcsv.reader("../data/customer.csv", format: :map)
 
 # map is an array of hashes
 map = reader.read
@@ -486,7 +486,8 @@ with chunk_size 2, and strings as key:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv", format: :map, chunk_size: 2, strings_as_keys: true)
+reader = Jcsv.reader("../data/customer.csv", format: :map, chunk_size: 2, 
+                     strings_as_keys: true)
 map = reader.read
 EOT
 
@@ -511,11 +512,11 @@ EOT
 code(<<-EOT)
 # type is :map. Rows are hashes. Set the default filter to not_nil. That is, all
 # fields are required unless explicitly set to optional.
-reader = Jcsv.reader("customer.csv", format: :map, default_filter: Jcsv.not_nil)
+reader = Jcsv.reader("../data/customer.csv", format: :map, default_filter: Jcsv.not_nil)
 
 # Set numberOfKids and married as optional, otherwise an exception will be raised
-reader.filters = {:number_of_kids => Jcsv.optional(next_filter: Jcsv.int),
-                  :married => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
+                  :married => Jcsv.optional >> Jcsv.bool, 
                   :loyalty_points => Jcsv.long,
                   :customerno => Jcsv.int,
                   :birth_date => Jcsv.date("dd/MM/yyyy")}
@@ -539,11 +540,11 @@ Reading as map also supports reading as enumerator:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("customer.csv", chunk_size: 2, format: :map)
+reader = Jcsv.reader("../data/customer.csv", chunk_size: 2, format: :map)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
-reader.filters = {"numberOfKids" => Jcsv.optional(next_filter: Jcsv.int),
-                  "married" => Jcsv.optional(next_filter: Jcsv.bool),
+reader.filters = {"numberOfKids" => Jcsv.optional >> Jcsv.int,
+                  "married" => Jcsv.optional >> Jcsv.bool,
                   "customerNo" => Jcsv.int}
 
 enum = reader.each
@@ -601,7 +602,7 @@ will be read as an array of maps:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("epilepsy.csv", format: :map, 
+reader = Jcsv.reader("../data/epilepsy.csv", format: :map, 
                      dimensions: [:patient, :subject, :treatment, :period])
 treatment = reader.read
 EOT
@@ -628,7 +629,7 @@ obtained from the subject:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("epilepsy.csv", format: :map, chunk_size: :all,
+reader = Jcsv.reader("../data/epilepsy.csv", format: :map, chunk_size: :all,
                      dimensions: [:treatment, :subject, :period], deep_map: true)
 
 # remove the :patient field from the data, as this field is already given by the
@@ -720,7 +721,7 @@ C	Y	G	12
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
+reader = Jcsv.reader("../data/GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
 
 table = reader.read[0]
@@ -735,7 +736,7 @@ Changing the order of reading dimensions will generate errors:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
+reader = Jcsv.reader("../data/GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_2, :dim_1, :dim_3], deep_map: true)
 table = reader.read[0]
 
@@ -777,7 +778,7 @@ Y	C	G	12
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("BadOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
+reader = Jcsv.reader("../data/BadOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_2, :dim_1, :dim_3], deep_map: true)
 table = reader.read[0]
 
@@ -825,8 +826,9 @@ C	Y	G	12
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("missing_data.csv", format: :map, chunk_size: :all, col_sep: ";",
-                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
+reader = Jcsv.reader("../data/missing_data.csv", format: :map, chunk_size: :all, 
+                     col_sep: ";", dimensions: [:dim_1, :dim_2, :dim_3],
+                     deep_map: true)
 table = reader.read[0]
 
 EOT
@@ -866,8 +868,9 @@ B	Z	D	11
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
-                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
+reader = Jcsv.reader("../data/missing_data2.csv", format: :map, chunk_size: :all,
+                     col_sep: ";", dimensions: [:dim_1, :dim_2, :dim_3],
+                     deep_map: true)
 table = reader.read[0]
 
 EOT
@@ -880,7 +883,8 @@ dimensions, dim_1 and dim2:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
+reader = Jcsv.reader("../data/missing_data2.csv", format: :map,
+                     chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_1, :dim_2], deep_map: true)
 table = reader.read[0]
 
@@ -894,9 +898,9 @@ notified of errors, she could add the suppress_warnings directive:
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("missing_data2.csv", format: :map, chunk_size: :all, col_sep: ";",
-                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true,
-                     suppress_warnings: true)
+reader = Jcsv.reader("../data/missing_data2.csv", format: :map, chunk_size: :all,
+                     col_sep: ";", dimensions: [:dim_1, :dim_2, :dim_3],
+                     deep_map: true, suppress_warnings: true)
 table = reader.read[0]
 
 EOT
@@ -912,7 +916,7 @@ Reading data with dimensions to lists is also possible, and will generate arrays
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("GoodOrder.csv", chunk_size: :all, col_sep: ";",
+reader = Jcsv.reader("../data/GoodOrder.csv", chunk_size: :all, col_sep: ";",
                      dimensions: [:dim_1, :dim_2, :dim_3])
 table = reader.read
 

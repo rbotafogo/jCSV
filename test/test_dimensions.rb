@@ -20,10 +20,8 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
-require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-require 'matrix'
 
 require_relative '../config'
 
