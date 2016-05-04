@@ -107,7 +107,7 @@ class Jcsv
     def new_reader(preferences)
       
       begin
-        raise "Reading file as map requires headers." if !@headers
+        raise "Reading file as map requires headers." if (!@headers && !@custom_headers)
         @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions,
                           @suppress_warnings)
       rescue java.io.IOException => e

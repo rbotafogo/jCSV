@@ -168,7 +168,7 @@ class Jcsv
       
       data_read = (filters == false)? super([].to_java(CellProcessor)) :
                     super(filters.values.to_java(CellProcessor))
-      data_read[-1] = @key_array if dimensions && data_read
+      data_read.unshift(@key_array) if dimensions && data_read
       data_read
     end
     

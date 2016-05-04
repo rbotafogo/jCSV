@@ -38,14 +38,12 @@ class Jcsv
 
   module NextFilter
 
-    # last_filter is a class variable that points to the last filter in the sequence of
-    # filters.  It is necessary to build the linked list of filters
-    class << self
-      attr_accessor :last_filter
-    end
-
     # This object's next filter
     attr_accessor :next_filter
+    
+    # last_filter is a variable that points to the last filter in the sequence of
+    # filters.  It is necessary to build the linked list of filters
+    attr_accessor :last_filter
 
     #---------------------------------------------------------------------------------------
     # Method >> is used to link one filter to the next filter.  Basically we keep a linked
@@ -54,10 +52,15 @@ class Jcsv
    
     def >>(next_filter)
       if (@next_filter.nil?)
-        NextFilter.last_filter = @next_filter = next_filter
+        @next_filter = next_filter
+        # this check is necessary in the following case: a >> (b >> c) >> d.  In
+        # principle one has no reason to use parenthesis, but if done, then this check
+        # should make everything still work fine
+        @last_filter = (next_filter.last_filter.nil?)? @next_filter :
+                         @next_filter.last_filter
       else
-        NextFilter.last_filter.next_filter = next_filter
-        NextFilter.last_filter = next_filter
+        @last_filter.next_filter = next_filter
+        @last_filter = next_filter        
       end
       self
     end
@@ -90,6 +93,7 @@ class Jcsv
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
         puts e.message
+        # puts e.print_stack_trace
         raise FilterError
       end
       

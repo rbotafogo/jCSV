@@ -46,7 +46,8 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      raise "#{@min} <= #{value} <= #{@max} does not hold" if (value < @min || value > @max)
+      raise "#{@min} <= #{value} <= #{@max} does not hold:\n#{context}" if
+        (value < @min || value > @max)
       exec_next(value, context)
     end
     
@@ -72,7 +73,7 @@ class Jcsv
     def execute(value, context)
       validateInputNotNull(value, context)
       substrings.each do |sub|
-        raise "Substring #{sub} found in #{value}" if value.include?(sub)
+        raise "Substring #{sub} found in #{value}:\n#{context}" if value.include?(sub)
       end
       exec_next(value, context)
     end
@@ -100,7 +101,8 @@ class Jcsv
       validateInputNotNull(value, context)
       @value ||= value # if value not initialized then use the first read value for equals
       
-      raise "Value '#{value}' is not equal to '#{@value}'" if (value != @value)
+      raise "Value '#{value}' is not equal to '#{@value}':\n#{context}" if
+        (value != @value)
       exec_next(value, context)
     end
 
@@ -118,7 +120,7 @@ class Jcsv
     end
     
     def execute(value, context)
-      raise "Value is nil" if (value.nil?)
+      raise "Empty value found:\n#{context}" if (value.nil?)
       exec_next(value, context)
     end
 
@@ -143,7 +145,8 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      raise "Value #{value} not element of #{@strings}" if !@strings.include?(value)
+      raise "Value #{value} not element of #{@strings}:\n#{context}" if
+        !@strings.include?(value)
       exec_next(value, context)
     end
     
@@ -166,7 +169,8 @@ class Jcsv
 
     def execute(value, context)
       truth = value.send(@function, *(@args))
-      raise "Contraint #{@function} with value #{value} is #{truth}" if truth == @check
+      raise "Contraint #{@function} with value #{value} is #{truth}:\n#{context}" if
+        truth == @check
       exec_next(value, context)
     end
 

@@ -270,7 +270,7 @@ is the integer 0.
 EOT
 
 console(<<-EOT)
-p content[1]
+pp content[1]
 EOT
 
 subsection("Chunking")
@@ -394,8 +394,8 @@ subsection("Skipping Columns")
 body(<<-EOT)
 Sometimes, a CSV file contains columns that are of no interest, and thus, reading them just
 consumes memory without any benefit.  jCSV allows skipping such columns, by defining a 
-mapping.  Bellow an example where the columns :customerno, :mailingaddress and
-:favouritequote are not read:
+mapping.  Bellow an example where the columns :customer_no, :mailing_address and
+:favourite_quote are not read:
 EOT
 
 code(<<-EOT)
@@ -403,7 +403,8 @@ reader = Jcsv.reader("../data/customer.csv")
 
 # Add mapping.  When column is mapped to false, it will not be retrieved from the
 # file, improving time and speed efficiency
-reader.mapping = {:customerno => false, :mailingaddress => false, :favouritequote => false}
+reader.mapping = {:customer_no => false, :mailing_address => false, 
+                  :favourite_quote => false}
 EOT
 
 body(<<-EOT)
@@ -930,7 +931,7 @@ EOT
 
 
 body(<<-EOT)
-This text was Markup formated with CodeWriter: 
+This text was Markdown formated with CodeWriter: 
   * gem install CodeWriter
   * jruby -S gem install CodeWriter
   * https://github.com/rbotafogo/CodeWriter

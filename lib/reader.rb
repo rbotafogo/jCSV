@@ -125,11 +125,19 @@ class Jcsv
       when Hash
         raise "CSV file does not have headers.  Cannot match filters with headers"
       when Array
+        @filters = []
+
+        # Add method 'values' to filters so that it behaves as a hash and works the same
+        # as headed csv files
+        def @filters.values
+          self
+        end
+        
         filters.each_with_index do |processor, i|
           @filters[i] = processor
         end
       else
-        raise "Filters parameters should either be a hash or an array of filters"
+        raise "Filters parameters should be an array of filters"
       end
       
     end
@@ -211,6 +219,7 @@ class Jcsv
                    strings_as_keys: false,
                    format: :list,
                    headers: true,
+                   custom_headers: nil,
                    chunk_size: 0,
                    deep_map: false,
                    dimensions: nil,
@@ -224,6 +233,7 @@ class Jcsv
       @filters = false
       @strings_as_keys = strings_as_keys
       @headers = headers
+      @custom_headers = custom_headers
       @ignore_empty_lines = ignore_empty_lines
       @format = format
       @surrounding_space_need_quotes = surrounding_space_need_quotes
@@ -246,14 +256,15 @@ class Jcsv
       # but this would all subclasses to have two subclasses one inheriting from the header
       # class and one inheriting from the headerless classes.  In this way we reduce the
       # subclasses need.
-      @headers? prepare_headers : headerless
+      @headers? prepare_headers : (@custom_headers? set_headers(@custom_headers) :
+                                     headerless)
 
       # if there are dimensions, then we need to prepare the mappings accordingly.  With
       # dimensions defined, users cannot defined mappings.
       dimensions_mappings if dimensions
             
     end
-    
+=begin    
     #---------------------------------------------------------------------------------------
     # read the whole file at once if no block given, or pass each row or chunk to the
     # block to be processed.
@@ -273,7 +284,7 @@ class Jcsv
       end
       
     end
-        
+=end        
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -370,13 +381,8 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def prepare_headers
-
-      extend Header
-            
-      # Read headers
-      @headers = @reader.headers
-
+    def _prepare_headers
+      
       # Convert headers to symbols, unless user specifically does not want it
       @headers.map! do |head|
         (head)? head.underscore.to_sym :
@@ -391,6 +397,32 @@ class Jcsv
 
       # initialize filters with the default filter
       init_filters
+
+    end
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def prepare_headers
+
+      extend Header
+      # Read headers
+      @headers = @reader.headers
+      _prepare_headers
+      
+    end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def set_headers(headers)
+
+      extend Header
+      # set headers
+      @headers = headers
+      _prepare_headers
       
     end
 

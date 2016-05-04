@@ -52,9 +52,11 @@ class CSVTest < Test::Unit::TestCase
       # read all the data into a flat map (hash) with keys the dimensions values
       # concatenated with '.'.
       treatment = reader.read
+      # p treatment
 
-      assert_equal(["placebo", "1", "1"], treatment[0][-1])
-      assert_equal(["placebo", "2", "2"], treatment[5][-1])
+      assert_equal(["placebo", "1", "1"], treatment[0][0])
+      assert_equal([1, 11, 31, 5], treatment[0][1..-1])
+      assert_equal(["placebo", "2", "2"], treatment[5][0])
       
     end
 
@@ -76,20 +78,22 @@ class CSVTest < Test::Unit::TestCase
       # read all the data into a flat map (hash) with keys the dimensions values
       # concatenated with '.'.
       treatment = reader.read
+      # p treatment[0]
+      # p treatment[10]
 
-      assert_equal(["placebo", "1", "1"], treatment[0][0][-1])
-      assert_equal(["placebo", "2", "2"], treatment[0][5][-1])
-      assert_equal(["placebo", "16", "1"], treatment[3][0][-1])
-      assert_equal(["Progabide", "52", "4"], treatment[10][7][-1])
+      assert_equal(["placebo", "1", "1"], treatment[0][0][0])
+      assert_equal(["placebo", "2", "2"], treatment[0][5][0])
+      assert_equal(["placebo", "16", "1"], treatment[3][0][0])
+      assert_equal(["Progabide", "52", "4"], treatment[10][7][0])
 
     end
-    
+
     #-------------------------------------------------------------------------------------
     # Read data into a list. 
     #-------------------------------------------------------------------------------------
 
     should "read more panel data" do
-
+      
       reader = Jcsv.reader("../data/GoodOrder.csv", col_sep: ";",
                            dimensions: [:dim_1, :dim_2, :dim_3])
       reader.filters = {
@@ -97,10 +101,10 @@ class CSVTest < Test::Unit::TestCase
       }
       
       table = reader.read
-      p table
+      # p table
       
     end
     
   end
-
+  
 end

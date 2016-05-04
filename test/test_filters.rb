@@ -122,7 +122,7 @@ class CSVTest < Test::Unit::TestCase
         :name => Jcsv.in_range("P", "Q") }
 
       filters = reader.read[0]
-      # p filters
+      p filters
 
     end
 
