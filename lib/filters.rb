@@ -28,7 +28,15 @@ class Jcsv
   include_package "org.supercsv.cellprocessor"
   include_package "org.supercsv.cellprocessor.constraint"
 
+  #========================================================================================
+  #
+  #========================================================================================
+
   class FilterError < RuntimeError
+
+  end
+
+  class ContraintViolation < RuntimeError
 
   end
 
@@ -79,6 +87,18 @@ class Jcsv
   #
   #========================================================================================
 
+  class Filter < org.supercsv.cellprocessor.CellProcessorAdaptor
+    include org.supercsv.cellprocessor.ift.LongCellProcessor
+    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
+    include org.supercsv.cellprocessor.ift.StringCellProcessor
+    include NextFilter
+
+  end
+  
+  #========================================================================================
+  #
+  #========================================================================================
+
   class RBParseBool < org.supercsv.cellprocessor.ParseBool
     include NextFilter
     
@@ -105,12 +125,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBConvertNilTo < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
-
+  class RBConvertNilTo < Filter
     attr_reader :value
     
     def initialize(value)
@@ -129,13 +144,8 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBOptional < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
-    
-    def initialize
-      super()
-    end
-    
+  class RBOptional < Filter
+        
     def execute(value, context)
       (value)? exec_next(value, context) : value      
     end
@@ -168,11 +178,7 @@ class Jcsv
   #
   #========================================================================================
   
-  class RBCollector < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBCollector < Filter
 
     attr_reader :collection
     
@@ -193,11 +199,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBDynamic < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBDynamic < Filter
 
     def initialize(*args, block: nil)
       @args = args
@@ -216,8 +218,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBGsub < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
+  class RBGsub < Filter
     
     def initialize(*args, hsh: hsh, block: nil)
       @args = args
@@ -238,8 +239,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBStringGeneric < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
+  class RBStringGeneric < Filter
 
     def initialize(function, *args, hsh: hsh, block: nil)
       @function = function

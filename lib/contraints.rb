@@ -22,18 +22,14 @@
 ##########################################################################################
 
 class Jcsv
-  include_package "org.supercsv.cellprocessor"
-  include_package "org.supercsv.cellprocessor.constraint"
+  # include_package "org.supercsv.cellprocessor"
+  # include_package "org.supercsv.cellprocessor.constraint"
 
   #========================================================================================
   #
   #========================================================================================
 
-  class RBInRange < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBInRange < Filter
 
     attr_reader :min
     attr_reader :max
@@ -46,7 +42,8 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      raise "#{@min} <= #{value} <= #{@max} does not hold:\n#{context}" if
+      raise ConstraintViolation,
+            "#{@min} <= #{value} <= #{@max} does not hold:\n#{context}" if
         (value < @min || value > @max)
       exec_next(value, context)
     end
@@ -57,11 +54,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBForbidSubstrings < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBForbidSubstrings < Filter
 
     attr_reader :substrings
     
@@ -84,11 +77,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBEquals < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBEquals < Filter
 
     attr_reader :value
     
@@ -112,15 +101,10 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBNotNil < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
-    
-    def initialize
-      super()
-    end
-    
+  class RBNotNil < Filter
+        
     def execute(value, context)
-      raise "Empty value found:\n#{context}" if (value.nil?)
+      raise ContraintViolation, "Empty value found:\n#{context}" if (value.nil?)
       exec_next(value, context)
     end
 
@@ -130,11 +114,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBIsElementOf < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.LongCellProcessor
-    include org.supercsv.cellprocessor.ift.DoubleCellProcessor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBIsElementOf < Filter
     
     attr_reader :strings
     
@@ -156,9 +136,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBStrContraints < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include org.supercsv.cellprocessor.ift.StringCellProcessor
-    include NextFilter
+  class RBStrContraints < Filter
 
     def initialize(function, *args, check: true)
       @function = function

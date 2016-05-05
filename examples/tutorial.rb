@@ -29,12 +29,25 @@ author("Rodrigo Botafogo")
 section("Introduction")
 
 body(<<-EOT)
-The CSV file format is a common format for data exchange between diverse applications. It
-is widely used; however, supresingly, there aren't that many good libraries for CSV 
-reading and writing.  In Ruby there are a couple of well known libraries to accomplish
-this task.  First, there is the standard Ruby CSV that comes with any Ruby implementation.
-This library according to Smarter CSV (https://github.com/tilo/smarter_csv) has the 
-following limitations: 
+MDArray-jCSV (jCSV for short) is the first and only (as far as I know) multidimensional 
+CSV reader.  Multidimensional? Yes... jCSV can read multidimensional data, also known 
+sometimes as "panel data".
+  
+From Wikipedia: “In statistics and econometrics, the term panel data refers to 
+multi-dimensional data frequently involving measurements over time. Panel data contain 
+observations of multiple phenomena obtained over multiple time periods for the same firms 
+or individuals. In biostatistics, the term longitudinal data is often used instead, 
+wherein a subject or cluster constitutes a panel member or individual in a longitudinal 
+study.”  jCSV makes this definition a bit less strict as it can read observations of 
+multiple phenomena obtained over multiple time periods for multiple firms or individuals.
+
+Other than reading panel data, jCSV is also a very powerful and feature packed CSV 
+reader.  The CSV file format is a common format for data exchange between diverse 
+applications. It is widely used; however, suprisingly, there aren't that many good 
+libraries for CSV reading and writing.  In Ruby there are a couple of well known 
+libraries to accomplish this task.  First, there is the standard Ruby CSV that comes 
+with any Ruby implementation.  This library according to Smarter CSV 
+(https://github.com/tilo/smarter_csv) has the following limitations: 
 
 "Ruby's CSV library's API is pretty old, and it's processing of CSV-files returning 
 Arrays of Arrays feels 'very close to the metal'. The output is not 
@@ -51,62 +64,90 @@ easier to put the date in a simple table.  When reading scientific data, such as
 or multidimensional array, it might also be better to remove headers and informational
 columns and read the actual data as just a plain array.
 
-jCSV was developed to be the "ultimate" CSV reader/writer.  It tries to merge all the good
-features of standard Ruby CSV library, smarter_csv, and other CSV libraries from other 
-languages.  jCSV is based on Super CSV (http://super-csv.github.io/super-csv/index.html), a 
-java CSV library.  According to Super CSV web page its motivation is "for Super CSV is to be 
+jCSV was developed to be the "ultimate" CSV reader (and soon writer).  It tries to 
+merge all the good features of standard Ruby CSV library, smarter_csv, and other CSV 
+libraries from other languages.  jCSV is based on Super CSV 
+(http://super-csv.github.io/super-csv/index.html), a java CSV library.  According to 
+Super CSV web page its motivation is "for Super CSV is to be 
 the foremost, fastest, and most programmer-friendly, free CSV package for Java". jCSV 
-motivation is to add to bring this view to the Ruby world, and since we are in Ruby, make
+motivation is to bring this view to the Ruby world, and since we are in Ruby, make
 it even easier and more programmer-friendly.
-
-Again, from Super CSV website:
-
-"My years in industry dealing with CSV files (among other things ;-), has enabled me to 
-identify a number of limitations with existing CSV packages. These limitations led me to 
-write Super CSV. My main criticism of existing CSV packages is that reading and writing 
-operates on lists of strings. What you really need is the ability to operate on a range of 
-different types of objects. Moreover, you often need to restrict input/output data with 
-constraints such as minimum and maximum sizes, or numeric ranges. Or maybe you are reading 
-image names, and want to ensure you do not read names contain the characters ":", " ", "/", 
-"^", "%".
-
-Super CSV deals with all these and many other issues. And should you have a constraint not 
-readily expressible in the package, new cell processors can easily be constructed. Furthermore, 
-you don't want to "CSV encode" strings you write. If they happen to contain characters that 
-needs escaping, then the CSV package should take care of this automatically!
-
-The underlying implementation of Super CSV has been written in an extensible fashion, hence 
-new readers/writers and cell processors can easily be supported. The inversion of control 
-implementation pattern has been enforced, eradicating long-lived mistakes such as using 
-filenames as arguments rather than Reader and Writer objects. Design patterns such as chain 
-of responsibility and the null object pattern can also be found in the code. Feel free to 
-have a look!"
 
 jCSV reading features are:
 EOT
 
 list(<<-EOT)
-Reads data as lists (Array of Arrays)
+Reads data as lists (Array of Arrays);
 
-Reads data as hashes
+Reads data as maps (Array of hashes);
 
-Reads multidimensional data to lists or hashes
+Reads multidimensional (panel) data to lists or hashes;
 
-Filter cells when reading to the proper format.  Predefined filters are: parse_big_decimal, 
-parse_bool, parse_char, parse_date, parse_double, parse_enum, parse_int, parse_long, collector,
-convert_null_to, hash_mapper, optional, str_replace, token, trim, truncate, d_min_max, 
-equals, forbid_sub_str, is_element_of, is_included_in, l_min_max, not_null, 
-require_hash_code, require_sub_str, str_len, str_min_max, str_not_null_or_empty, 
-str_req_ex, unique, unique_hash_code, parse_date_time, parse_date_time_zone, 
-parse_duration, parse_interval, parse_local_date, parse_local_date_time, 
-parse_local_time, parse_period
+Reads multidimensional data to vectors, i.e., a multidimensional array (MDArray);  
+
+When reading panel data, use dimensions as keys, allowing random access to any row 
+in the data by use of the key.  For instance, if first_name, last_name are 
+dimensions, then one can access data by doing data[“John.Smith”];
+
+Read panel data with the ‘critbit’ reader which automagically sorts keys and allows 
+for prefix retrieval of data, i.e., doing data.each(“D”) { } will retrieve 
+all names starting with “D” and give it to the block;
+
+When reading panel data, organize data as maps of maps (deep_map);
+
+Able to read files with headers or no-headers;
+
+When the file has no-headers, allow the user to provide headers so that reading can 
+be done either as array of arrays, array of hashes, or multidimensional with keys;
+
+Able to process large CSV-files;
+
+Able to chunk the input from the CSV file to avoid loading the whole CSV file into memory;
+
+Able to treat the file as an enumerator, so that reading more data can be done at 
+any time during the script execution, it can be stopped and restarted at any time;
+
+Able to pass a block to the read method, so data from the CSV file can be directly 
+processed (e.g. Resque.enqueue )
+
+Allows a bit more flexible input format, where comments are possible, and col_sep, 
+row_sep can be set to any character sequence, including control characters;
+
+Able to re-map CSV "column names" to Hash-keys of your choice (normalization);
+
+Able to ignore "columns" in the input (delete columns);
+
+Able to change columns´ order, when reading to an Array of Arrays;
+
+Provide dozens of filters/validators for the data;
+
+Filters can be chained allowing for complex data manipulation.  For instance, 
+suppose one column can have empty values or dollar values.  If it is a dollar values, 
+then it should be a float.  Consider that the data is stored using a Brazilian 
+locale format, i.e., decimal separator is ‘,’ and grouping is ‘.’ (the reverse of 
+US locale).  Suppose also that the value should be in the range of US$ 1.000,00 and 
+US$ 2.000,00 and finally suppose that we actually want to see this data not as 
+dollar amounts but as Brazilian Reais, converted with the day´s current rate.  
+Then this sequence of filters should do it:
 EOT
+
+comment_code(<<-EOT)
+Jcsv.optional >> Jcsv.float(locale: Brazil) >> Jcsv.in_range(1000, 2000) >> 
+Jcsv.dynamic { |value| rate * value }
+EOT
+
+list(<<-EOT)
+Date can be parsed by any of Ruby DateTime formats: httpdate, iso8601, jd, etc.;
+
+Can filter data by any of the Ruby String methods: :[], :reverse, :gsub, :prepend, etc.
+EOT
+
 
 section("Reading as Lists")
 
 body(<<-EOT)
-In this section we will read the following 'customer.csv' file.  Some things should be observed in the records
-of this data:
+In this section we will read the following 'customer.csv' file.  Some things 
+should be observed in the records of this data:
 EOT
 
 list(<<-EOT)
@@ -126,12 +167,15 @@ customerNo,firstName,lastName,birthDate,mailingAddress,married,numberOfKids,favo
 1,John,Dunbar,13/06/1945,"1600 Amphitheatre Parkway
 Mountain View, CA 94043
 United States",,,"""May the Force be with you."" - Star Wars",jdunbar@gmail.com,0
+
 2,Bob,Down,25/02/1919,"1601 Willow Rd.
 Menlo Park, CA 94025
 United States",Y,0,"""Frankly, my dear, I don't give a damn."" - Gone With The Wind",bobdown@hotmail.com,123456
+
 3,Alice,Wunderland,08/08/1985,"One Microsoft Way
 Redmond, WA 98052-6399
 United States",Y,0,"""Play it, Sam. Play ""As Time Goes By."""" - Casablanca",throughthelookingglass@yahoo.com,2255887799
+
 4,Bill,Jobs,10/07/1973,"2701 San Tomas Expressway
 Santa Clara, CA 95050
 United States",Y,3,"""You've got to ask yourself one question: ""Do I feel lucky?"" Well, do ya, punk?"" - Dirty Harry",billy34@hotmail.com,36
@@ -140,16 +184,17 @@ EOT
 subsection("Simple Interface")
 
 body(<<-EOT)
-The simplest way of reading a csv file is as a list or an array of arrays. Reading in this way is a simple
-call to Jcsv.reader with the filename, in this case the file is called 'customer.csv'. In the next
+The simplest way of reading a csv file is as a list or an array of arrays. 
+Reading in this way is a simple call to Jcsv.reader with the filename, in 
+this case the file is called 'customer.csv'. In the next
 examples we will parse a CSV file and show all the features and options that can be 
-applied for changing the parsing.  The file we are reading has headers.  Headers are converted from string 
-to symbol.
+applied for changing the parsing.  The file we are reading has headers.  
+Headers are converted from string to symbol.
 EOT
 
 code(<<-EOT)
 require 'jcsv'
-require 'pp'
+require 'pp'   # only needed for pretty printing
 
 # Create a new reader by passing the filename to be parsed
 reader = Jcsv.reader("../data/customer.csv")
@@ -182,9 +227,10 @@ EOT
 subsection("Strings as Keys")
 
 body(<<-EOT)
-We will now see many of the options for reading files.  Options are passed to method reader.
-First 'strings_as_key' when true will not convert headers to symbol. Note also, that we can read the
-headers without reading the rest of the file:
+Options can be passed to method reader, changing the behavior of the reader. 
+'strings_as_key' when true will not convert headers to symbol. Note also, 
+that headers are read imediately by method reader without the need to call any other
+methods:
 EOT
 
 console(<<-EOT)
@@ -195,8 +241,9 @@ EOT
 subsection("Processing with a Block")
 
 body(<<-EOT)
-One very interesting feature of Ruby CSV libraries is the ability to give a block to the parser and
-process the data as it is being read. In jCSV this can also be accomplished:
+One very interesting feature of Ruby CSV libraries is the ability to give a block 
+to the parser and process the data as it is being read. In jCSV this can also be 
+accomplished:
 EOT
 
 code(<<-EOT)
@@ -206,6 +253,7 @@ code(<<-EOT)
 # Read file 'customer.csv'.  File has headers (this is the default) and we keep the keys as string
 reader = Jcsv.reader("../data/customer.csv", headers: true, strings_as_keys: true)
 EOT
+
 
 comment_code(<<-EOT)
 reader.read do |line_no, row_no, row, headers|
@@ -228,6 +276,7 @@ reader.read do |line_no, row_no, row, headers|
 end
 #EOT
 
+
 subsection("Default Filter and Filters")
 
 body(<<-EOT)
@@ -244,11 +293,11 @@ EOT
 
 body(<<-EOT)
 As we can see, this parsing dies on record number 2 with a Constraint violation, since we have 
-a default filter of not_nil and in this record two fields are nil.  In order to properly 
-handle this issue, we will add filters to our parser.  First we make :numberofkids 
-and :married as optional; however, if this field is filled, then :numberofkids should be and 
+a default filter of not_nil and in this record two fields are nil (empty).  In order to properly 
+handle this issue, we will add filters to our parser.  First we make :number_of_kids 
+and :married as optional; however, if this field is filled, then :number_of_kids should be and 
 integer and :married should be a boolean.  In order to add this filters, we chain them 
-with: Jcsv.optional(Jcsv.int) and Jcsv.optional(Jcsv.bool):
+with: Jcsv.optional >> Jcsv.int and Jcsv.optional >> Jcsv.bool:
 EOT
 
 code(<<-EOT)
@@ -264,8 +313,8 @@ content = parser.read
 EOT
 
 body(<<-EOT)
-Let's take a look at the second record.  We can see that :customerno is an integer, in this 
-case 2, since we have selected the second record, :married is now true and the number of kids 
+Let's take a look at the second record.  We can see that :customer_no is an integer, in this 
+case 2, since we have selected the second record, :married is now true and the :number_of_kids 
 is the integer 0.
 EOT
 
@@ -276,7 +325,7 @@ EOT
 subsection("Chunking")
 
 body(<<-EOT)
-As with super_csv, jCSV also supports data chunking, by passing as argumento the chunk_size.
+As with super_csv, jCSV also supports data chunking, by passing as argument the chunk_size.
 EOT
 
 code(<<-EOT)
@@ -305,7 +354,7 @@ size 1, since there are no more records after that.  When reading chunks, in the
 EOT
 
 code(<<-EOT)
-# Read chunks of the file.  In this case, we are breaking the file in chunks of 2
+# Read chunks of the file.  In this case, we are breaking the file in chunks of 3
 reader = Jcsv.reader("../data/customer.csv", chunk_size: 3)
 
 # Add filters, so that we get 'objects' instead of strings for filtered fields
@@ -360,15 +409,19 @@ In order to read the other two records we need to call method 'next' again:
 EOT
 
 console(<<-EOT)
-p enum.next
+pp enum.next
 EOT
 
 body(<<-EOT)
 We now write a small script that will look for a record that has "Bob" on the :firstname.  
 When this happens, the script terminates and no more reading needs to be done.  For large 
-CSV files, breaking reading when the required data is read is a very useful feature. Remember
-that row is an array with line_no, row_no, row data, and headers. So, to get :firstname
-we need to read row[2][1].
+CSV files, breaking reading when the required data is read is a very useful feature. Note
+that we could do the same thing using a block and breaking out of the block; however, using
+enumerator is more flexible than blocks as we could read part of the file, do some 
+processing, wait for user input, and then continue reading.
+
+Remember that row is an array with line_no, row_no, row data, and headers. So, to get 
+:firstname we need to read row[2][1].  
 EOT
 
 code(<<-EOT)
@@ -438,10 +491,10 @@ reader.filters = {:number_of_kids => Jcsv.optional >> Jcsv.int,
                   :married => Jcsv.optional >> Jcsv.bool,
                   :customer_no => Jcsv.int}
 
-# Mapping allows reordering of columns.  In this example, column 0 (:customerno)
-# in the csv file will be loaded in position 2 (3rd column); column 1 (:firstname)
+# Mapping allows reordering of columns.  In this example, column 0 (:customer_no)
+# in the csv file will be loaded in position 2 (3rd column); column 1 (:first_name)
 # in the csv file will be loaded in position 0 (1st column); column 2 on the csv file
-# will not be loaded (false); column 4 (:birthdate) will be loaded on position 3,
+# will not be loaded (false); column 4 (:birth_date) will be loaded on position 3,
 # and so on.
 # When reordering columns, care should be taken to get the mapping right or unexpected
 # behaviour could result.
@@ -471,6 +524,7 @@ reader = Jcsv.reader("../data/customer.csv", format: :map)
 
 # map is an array of hashes
 map = reader.read
+pp map
 EOT
 
 body(<<-EOT)
@@ -503,11 +557,17 @@ EOT
 
 body(<<-EOT)
 Filters and mappings are also supported for maps.  Note that we introduce some new filters:
-Jcsv.long and Jcsv.date.  We also show how to rename columns by using a mapping, for instance,
-we want column :numberofkids to be mapped to :numero_criancas which is the same label but in
-portuguese.  Note also that we map :loyaltypoints to the string with white spaces 
-"pontos fielidade".  Finally, columns :customerno, :mailingaddress and :favouritequote are
-also droped.
+Jcsv.long and Jcsv.date.  jCSV support filters Jcsv.int, Jcsv.long and Jcsv.double although 
+'int', 'long' and 'double' are not Ruby types.  jCSV also support filters Jcsv.float and 
+Jcsv.fixnum.  A Jcsv.int filter will convert the data to a fixnum but it will raise and 
+exception if the size of the int is larger that a Java int.  The same happens with Jcsv.long, 
+and Jcsv.double.
+
+We also show how to rename columns by using a mapping, for instance,
+we want column :number_of_kids to be mapped to :numero_criancas which is the same label but in
+portuguese.  Note also that we map :loyalty_points to the string with white spaces 
+"pontos fielidade".  Finally, columns :customer_no, :mailing_address and :favourite_quote are
+droped.
 EOT
 
 code(<<-EOT)
@@ -577,10 +637,9 @@ The following excerpt shows data from an experiment in which patients with epile
 given either a placebo or Progabide to check the effect of this medicament in their 
 seizure rate during a four week treatment period (data from R). 
 
-Clearly, treatment is a 
-dimension in this data, as a patient is either given a placebo or Progabide. The patient id
-(first column) can also be considered a dimension. In this experiment there were 59 patients,
-during a 4 week period, thus this dataset has 236 rows.
+Clearly, treatment is a dimension in this data, as a patient is either given a placebo 
+or Progabide. The patient id (first column) can also be considered a dimension. In this 
+experiment there were 59 patients, during a 4 week period, thus this dataset has 236 rows.
 EOT
 
 comment_code(<<-EOT)
@@ -615,11 +674,12 @@ end
 EOT
 
 body(<<-EOT)
-Observe that the :key hashkey has an array with all the element's dimensions and the other
+Observe that each row has a 'key' composed of all the dimensions concatenated with '.' and the other
 columns are still processed as in a regular map reader.  At this point it might not be
 clear what the benefit of dimensions are, but let's move a little bit forward.
 EOT
 
+===============================================================================================
 subsection("Deep Map")
 
 body(<<-EOT)

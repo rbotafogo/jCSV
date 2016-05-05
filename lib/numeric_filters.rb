@@ -25,8 +25,8 @@ require 'bigdecimal'
 require_relative 'locale'
 
 class Jcsv
-  include_package "org.supercsv.cellprocessor"
-  include_package "org.supercsv.cellprocessor.constraint"
+  # include_package "org.supercsv.cellprocessor"
+  # include_package "org.supercsv.cellprocessor.constraint"
 
   #========================================================================================
   #
@@ -76,8 +76,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBParseFloat < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
+  class RBParseFloat < Filter
     
     attr_reader :locale
     attr_reader :dfs
@@ -104,13 +103,8 @@ class Jcsv
   #
   #========================================================================================
   
-  class RBParseBignum < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
-    
-    def initialize
-      super()
-    end
-    
+  class RBParseBignum < Filter
+        
     def execute(value, context)
       validateInputNotNull(value, context)
       exec_next(value.to_i, context)
@@ -122,13 +116,8 @@ class Jcsv
   #
   #========================================================================================
   
-  class RBParseComplex < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
-    
-    def initialize
-      super()
-    end
-    
+  class RBParseComplex < Filter
+        
     def execute(value, context)
       validateInputNotNull(value, context)
       exec_next(value.to_c, context)
@@ -140,13 +129,8 @@ class Jcsv
   #
   #========================================================================================
   
-  class RBParseRational < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
-    
-    def initialize
-      super()
-    end
-    
+  class RBParseRational < Filter
+        
     def execute(value, context)
       validateInputNotNull(value, context)
       exec_next(value.to_r, context)
@@ -158,8 +142,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBParseBigDecimal < org.supercsv.cellprocessor.CellProcessorAdaptor
-    include NextFilter
+  class RBParseBigDecimal < Filter
     
     attr_reader :locale
     attr_reader :dfs
