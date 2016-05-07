@@ -674,19 +674,99 @@ end
 EOT
 
 body(<<-EOT)
-Observe that each row has a 'key' composed of all the dimensions concatenated with '.' and the other
-columns are still processed as in a regular map reader.  At this point it might not be
-clear what the benefit of dimensions are, but let's move a little bit forward.
+Observe that each row has a 'key' composed of all the dimensions concatenated 
+with '.' and the other columns are still processed as in a regular map reader.
+Note that dimensions allows retrieval of rows by keys:  
 EOT
 
-===============================================================================================
+console(<<-EOT)
+p treatment["112.1.placebo.3"]
+p treatment["481.48.Progabide.2"]
+EOT
+
+body(<<-EOT)
+Dimensions' elements can be accessed by accessing reader's 'dimensions' instance
+variable and getting the labels variable.  We will not show dimensions label's 
+for :patient and :subject as those are large sets.
+EOT
+
+console(<<-EOT)
+pp reader.dimensions[:treatment].labels
+pp reader.dimensions[:period].labels
+EOT
+
+body(<<-EOT)
+It is also important to note that the dimensions we have defined on the 
+epilepsy data are not ideal since :patient is actually dimensions by itself and
+:subject is numbered from 1 to 59; it would be better if subjects were numbered
+as first, second, third, etc. receiving placebo, then first, second, third, etc.
+receiving Progabide.  If this was the case, then we would know how to retrieve
+a patient's data.  For instance we could get treatment['placebo.4.1'] would be
+the first week of the fourth patient taking placebo. 
+
+Let's now take a look a balanced panel data from Wikipedia 
+(https://en.wikipedia.org/wiki/Panel_data)
+EOT
+
+comment_code(<<-EOT)
+person,year,income,age,sex
+1,2001,1300,27,1
+1,2002,1600,28,1
+1,2003,2000,29,1
+2,2001,2000,38,2
+2,2002,2300,39,2
+2,2003,2400,40,2
+EOT
+
+body(<<-EOT)
+We observe that person and year are dimensions of the data and income, age and sex are
+actual data.  Next we show an unbalaced panel data:
+EOT
+
+comment_code(<<-EOT)
+person,year,income,age,sex
+1,2001,1600,23,1
+1,2002,1500,24,1
+2,2001,1900,41,2
+2,2002,2000,42,2
+2,2003,2100,43,2
+3,2002,3300,34,1
+EOT
+
+body(<<-EOT)
+We can read both the balanced and the unbalanced panel data without any problem:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("../data/balanced_panel.csv", format: :map, 
+                     dimensions: [:person, :year])
+bp = reader.read
+pp bp
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("../data/unbalanced_panel.csv", format: :map, 
+                     dimensions: [:person, :year])
+bp = reader.read
+pp bp
+EOT
+
+body(<<-EOT)
+Note that in the last example, we got a 'warning' saying that dimension 'year' is frozen.
+We will talk more about frozen dimensions in a later section of this document. 
+Although we got a warning, reading proceeded without any problem.
+EOT
+
 subsection("Deep Map")
 
 body(<<-EOT)
-In the next
-example we will add some new directives to the reader: chunk_size :all and deep_map true.
-The patient field will be ignored, since this is redundant information that can be
-obtained from the subject: 
+As we've seen on the previous section, dimensions help us access data by keys; however,
+if we wanted to see all the data from patients taking 'Progabide', we would probably have
+to look at our dimensions and write a loop to get the desired data.
+
+jCSV provides another way of reading the data the helps with this problem: deep_map.
+Bellow we read the epilepsy data seting deep_map to true and chunk_size to :all.
+When chunk_size is :all, the whole data file is read in one large chunk.
 EOT
 
 code(<<-EOT)
@@ -703,18 +783,18 @@ EOT
 body(<<-EOT)
 First let's understand the directive chunk_size :all: this indicates that the file 
 should be read in one large chunk.  When reading chunks, each chunk is an array, of
-arrays of the given chunk size.  When reading chunk_size all, the returned data
+arrays of the given chunk size.  When reading chunk_size :all, the returned data
 is in an array that has an array with all row, this is why we have treatment 
 above to be reader.read[0].
 
-The attentive reader might ask: "why do we need chunc_size :all, since when no
-chunk size is given the whole file is read anyway?".  This has to do with the
-directive deep_map true.  When deep_map is used, the first dimension's elements 
-are keys to the second dimensions element's and so on.  In order to be able to
-make deep maps chunks of data need to be read.  
+The attentive reader might ask: "why do we need chunk_size :all, since when no
+chunk size is given the whole file is read anyway?".  When no chunk_size is 
+given, the data is read one line at a time and the reader has "no memory" of
+what was read previously.  With chunk_size :all all the data is part of one 
+large dataset and this allows the construction of deep maps.
 
 The treatment variable above is a hash that has two entries: 'placebo' and 
-'Progabide'.  The placebo entry has as entries the elements from the second 
+'Progabide'.  The placebo entry has, as entries, the elements from the second 
 dimension, which is subject.  So treatment["placebo"]["1"] shows the data
 for all four periods os treatment for subject "1".
 EOT
@@ -724,6 +804,10 @@ pp treatment["placebo"]["1"]
 EOT
 
 body(<<-EOT)
+If we wanted to get all patient's data that took 'Progabide' then 
+treatment['Progabide'] would do the trick. We will not print it as 
+this a rather large output.
+
 As we can see, on the first period, subject "1" had base = "11", age = "31", 
 seizure.rate = "5".  On the second period it's seizure.rate was "3".  We can
 get this from our treatment variable with:
@@ -733,35 +817,12 @@ console(<<-EOT)
 p treatment["placebo"]["1"]["2"][:"seizure.rate"]
 EOT
 
-body(<<-EOT)
-Let's take a look at another entry: a subject 38 that uses Progabide.  One aspect to be
-noted in the subject's dimensions on is that it would be better for subjects to be 
-numbered 1, 2, 3, etc. for treatment with 'placebo' and also, 1, 2, 3, etc. for treatment
-with 'Progabide'.  If this were the case then the first patient treated with placebo 
-would be accessed with 'treatment["placebo"]["1"]' and the first patient treated with
-Progabide would be accessed with 'treatment["Progabide"]["1"]'.  In the current 
-forms, we need to know that patient "38" was treated with Progabide. 
-EOT
-
-console(<<-EOT)
-pp treatment["Progabide"]["38"]
-EOT
-
-body(<<-EOT)
-Dimensions' elements can be accessed by accessing reader's 'dimensions' instance
-variable and getting the labels:
-EOT
-
-console(<<-EOT)
-pp reader.dimensions[:treatment].labels
-pp reader.dimensions[:period].labels
-EOT
-
 subsection("Dimensions Ordering")
 
 body(<<-EOT)
-Dimensions should be read from slowest to fast changing in the file.  The example bellow
-shows a CSV file and the proper way of organizing dimensions:
+jCSV assumes that dimensions should be organized from slowest to fast changing 
+in the file.  The example bellow shows a CSV file and the proper way of organizing 
+dimensions.  Note that Dim 1 is the slowest to change, then Dim 2 and finally Dim3:
 EOT
 
 comment_code(<<-EOT)
@@ -782,8 +843,9 @@ C	Y	G	12
 EOT
 
 code(<<-EOT)
-reader = Jcsv.reader("../data/GoodOrder.csv", format: :map, chunk_size: :all, col_sep: ";",
-                     dimensions: [:dim_1, :dim_2, :dim_3], deep_map: true)
+reader = Jcsv.reader("../data/GoodOrder.csv", format: :map, chunk_size: :all, 
+                     col_sep: ";", dimensions: [:dim_1, :dim_2, :dim_3],
+                     deep_map: true)
 
 table = reader.read[0]
 EOT
@@ -793,7 +855,11 @@ pp table
 EOT
 
 body(<<-EOT)
-Changing the order of reading dimensions will generate errors:
+Note that we can input the dimensions in any order in the dimension directive.  In the
+next example, we have dim_2 as the first dimension.  If dim_2 were the slowest 
+changing dimension, then this would be the "right" way of writing the dimensions
+directive.  Note, however, that since dim_2 is not the slowest changing dimensions
+when reading this file we will get some warnings:
 EOT
 
 code(<<-EOT)
@@ -814,8 +880,10 @@ it are also frozen.  In this case, dim_1 and dim_3 also become frozen.
 
 When dim_2 cycles back to X the values of dim_1 that were read are A and B.  When it 
 becomes frozen, no other element can be added to this dimension.  When label C is
-read form dim_1, it generates the error saying that label C cannot be added to
-dim_1.
+read form dim_1, it generates the warning saying that label C cannot be added to
+dim_1.  Although the warning says that label C cannot be added, it is actually added and
+everything works fine at the end.  Then, if everything works fine, why does a 
+dimension become frozen on the first hand?  The answer will come shortly!
 
 We will now read the file bellow, BadOrder.csv.  It contains the same data as above
 but dimension dim_2 is the first column:
@@ -846,12 +914,12 @@ table = reader.read[0]
 EOT
 
 body(<<-EOT)
-Note now that the error happens earlier in the file.  Again, as we read dim_2 we get 
+Note now that the warning happens earlier in the file.  Again, as we read dim_2 we get 
 X, X, Y, Y.  When we cycle back to X, dim_2 is frozen, freezing dim_1 and dim_3 in 
-the sequence.  Now when the first B is read, dim_1 is already frozen and an error is
+the sequence.  Now when the first B is read, dim_1 is already frozen and a warning is
 issued.
 
-Even though an error is issued, reading continues normally and the table can be 
+Even though a warning is issued, reading continues normally and the table can be 
 printed:
 EOT
 
@@ -860,14 +928,14 @@ pp table
 EOT
 
 body(<<-EOT)
-If reading continues normally, why is an error issued?  For large datasets, when 
+If reading continues normally, why is a warning issued?  For large datasets, when 
 data is organized with the slowest changing dimension first, it becomes easier to
 identify missing or duplicated data.  It is also a necessary condition for reading
 data into a vector, as we will show in the the next section ("Reading into a Vector").
 
-We now show a data file in which there is missing data. Note that we removed the 
+We now show a data file in which there is some missing data. Note that we removed the 
 fourth line from the file, and note also that this is not easily identified.  In a
-larger dataset, seeing this would be very hard.  
+larger dataset, seeing this would be very hard.
 EOT
 
 comment_code(<<-EOT)
@@ -895,7 +963,7 @@ table = reader.read[0]
 EOT
 
 body(<<-EOT)
-Again, we get an error with dimension frozen.  This happens when reading the 8th row.
+Again, we get a warning with 'dimension frozen'.  This happens when reading the 8th row.
 Dimension 3 was frozen after reading element K, since this dimension cycled from H 
 back to K.  When reaching the 8th row a new element G is seen and indicates that
 something is wrong in the file.
@@ -951,11 +1019,11 @@ table = reader.read[0]
 
 EOT
 
-subsection("Hidding Errors")
+subsection("Hidding Warnings")
 
 body(<<-EOT)
-Since errors are shown but data is still read, if the user knows she doesn't want to be
-notified of errors, she could add the suppress_warnings directive:
+Since warnings are shown but data is still read, if the user knows she doesn't want to be
+notified of warnings, she could add the suppress_warnings directive:
 EOT
 
 code(<<-EOT)
@@ -967,7 +1035,7 @@ table = reader.read[0]
 EOT
 
 body(<<-EOT)
-As can be seen, the code above does not generate any errors.
+As can be seen, the code above does not generate any warnings any more.
 EOT
 
 subsection("Dimensions to Lists")
@@ -987,6 +1055,7 @@ console(<<-EOT)
 pp table
 EOT
 
+subsection("The Critbit Reader")
 
 
 

@@ -22,11 +22,11 @@
 ##########################################################################################
 
 require 'bigdecimal'
+require 'ipaddr'
+
 require_relative 'locale'
 
 class Jcsv
-  include_package "org.supercsv.cellprocessor"
-  include_package "org.supercsv.cellprocessor.constraint"
 
   #========================================================================================
   #
@@ -36,7 +36,7 @@ class Jcsv
 
   end
 
-  class ContraintViolation < RuntimeError
+  class ConstraintViolation < RuntimeError
 
   end
 
@@ -199,6 +199,20 @@ class Jcsv
   #
   #========================================================================================
 
+  class RBIPAddr < Filter
+
+    def execute(value, context)
+      validateInputNotNull(value, context)
+      value = IPAddr.new(value)
+      exec_next(value, context)
+    end
+    
+  end
+  
+  #========================================================================================
+  #
+  #========================================================================================
+
   class RBDynamic < Filter
 
     def initialize(*args, block: nil)
@@ -283,6 +297,10 @@ class Jcsv
     RBCollector.new
   end
 
+  def self.ipaddr
+    RBIPAddr.new
+  end
+  
   def self.dynamic(*args, &block)
     RBDynamic.new(*args, block: block)
   end
@@ -299,7 +317,7 @@ end
 
 require_relative 'date_filters'
 require_relative 'numeric_filters'
-require_relative 'contraints'
+require_relative 'constraints'
 
 
 =begin

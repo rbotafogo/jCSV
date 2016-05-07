@@ -146,7 +146,8 @@ class CSVTest < Test::Unit::TestCase
       # reader.read { |line_no, row_no, row, headers| }
       # Will raise an exception, as the default_filter is not_nil and there is a record
       # in which field 'married' is nil
-      assert_raise ( RuntimeError ) { reader.read { |line_no, row_no, row, headers| } }
+      assert_raise ( Jcsv::ConstraintViolation ) {
+        reader.read { |line_no, row_no, row, headers| } }
       
     end
 

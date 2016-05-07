@@ -119,7 +119,8 @@ class CSVTest < Test::Unit::TestCase
         :truth1 => Jcsv.bool,
         :truth2 => bool,
         :truth3 => bool,
-        :name => Jcsv.in_range("P", "Q") }
+        :name => Jcsv.in_range("P", "Q"),
+        :ip1 => Jcsv.ipaddr >> Jcsv.dynamic { |val| val.to_i } }
 
       filters = reader.read[0]
       p filters

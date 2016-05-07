@@ -104,7 +104,7 @@ class Jcsv
   class RBNotNil < Filter
         
     def execute(value, context)
-      raise ContraintViolation, "Empty value found:\n#{context}" if (value.nil?)
+      raise ConstraintViolation, "Empty value found:\n#{context}" if (value.nil?)
       exec_next(value, context)
     end
 
@@ -136,7 +136,7 @@ class Jcsv
   #
   #========================================================================================
 
-  class RBStrContraints < Filter
+  class RBStrConstraints < Filter
 
     def initialize(function, *args, check: true)
       @function = function
@@ -147,7 +147,7 @@ class Jcsv
 
     def execute(value, context)
       truth = value.send(@function, *(@args))
-      raise "Contraint #{@function} with value #{value} is #{truth}:\n#{context}" if
+      raise "Constraint #{@function} with value #{value} is #{truth}:\n#{context}" if
         truth == @check
       exec_next(value, context)
     end
@@ -167,27 +167,27 @@ class Jcsv
   end
   
   def self.ascii_only?
-    RBStrContraints.new(:ascii_only?)
+    RBStrConstraints.new(:ascii_only?)
   end
 
   def self.not_ascii?
-    RBStrContraints.new(:ascii_only?, check: false)
+    RBStrConstraints.new(:ascii_only?, check: false)
   end
 
   def self.empty?
-    RBStrContraints.new(:empty?)
+    RBStrConstraints.new(:empty?)
   end
 
   def self.end_with?(*args)
-    RBStrContraints.new(:end_with?, *args)
+    RBStrConstraints.new(:end_with?, *args)
   end
   
   def self.include?(*args)
-    RBStrContraints.new(:include?, *args)
+    RBStrConstraints.new(:include?, *args)
   end
 
   def self.start_with?(*args)
-    RBStrContraints.new(:start_with?, *args)
+    RBStrConstraints.new(:start_with?, *args)
   end
 
   def self.not_nil
