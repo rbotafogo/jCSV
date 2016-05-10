@@ -44,8 +44,8 @@ class CSVTest < Test::Unit::TestCase
 
     should "convert to MDArray" do
 
-      reader = Jcsv.reader("sleep.csv", format: :vector, col_sep: ";", comment_starts: "#",
-                           dtype: :double, dimensions: [:group, :id])
+      reader = Jcsv.reader("../data/sleep.csv", format: :vector, col_sep: ";",
+                           comment_starts: "#", dtype: :double, dimensions: [:group, :id])
       reader.mapping = {:row => false}
       ssleep = reader.read
       ssleep.print
@@ -60,8 +60,8 @@ class CSVTest < Test::Unit::TestCase
 
     should "convert csv data to an MDArray" do
 
-      reader = Jcsv.reader("epilepsy.csv", headers: true, format: :vector, dtype: :double,
-                           dimensions: [:treatment, :subject, :period])
+      reader = Jcsv.reader("../data/epilepsy.csv", headers: true, format: :vector,
+                           dtype: :double, dimensions: [:treatment, :subject, :period])
       treatment = reader.read
       # treatment.print
       treatment.slice(0,0).print

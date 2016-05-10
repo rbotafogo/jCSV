@@ -35,10 +35,6 @@ class Jcsv
   class RBParseInt < org.supercsv.cellprocessor.ParseInt
     include NextFilter
 
-    def initialize
-      super()
-    end
-
     def execute(value, context)
       begin
         exec_next(super(value, context), context)
@@ -57,9 +53,23 @@ class Jcsv
   class RBParseLong < org.supercsv.cellprocessor.ParseLong
     include NextFilter
 
-    def initialize
-      super()
+    def execute(value, context)
+      begin
+        exec_next(super(value, context), context)
+      rescue org.supercsv.exception.SuperCsvCellProcessorException => e
+        puts e.message
+        raise FilterError
+      end
     end
+    
+  end
+
+  #========================================================================================
+  #
+  #========================================================================================
+  
+  class RBParseDouble < org.supercsv.cellprocessor.ParseDouble
+    include NextFilter
 
     def execute(value, context)
       begin
@@ -175,6 +185,10 @@ class Jcsv
 
   def self.long
     RBParseLong.new
+  end
+
+  def self.double
+    RBParseDouble.new
   end
 
   def self.fixnum

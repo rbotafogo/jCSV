@@ -1057,6 +1057,100 @@ EOT
 
 subsection("The Critbit Reader")
 
+body(<<-EOT)
+A crit bit tree, also known as a Binary Patricia Trie
+(https://en.wikipedia.org/wiki/Trie), sometimes called digital tree,
+radix tree or prefix tree (as they can be searched by prefixes), is an ordered tree 
+data structure that is used to store a dynamic set or associative array where the 
+keys are usually strings. 
+
+Unlike a binary search tree, no node in the tree stores 
+the key associated with that node; instead, its position in the tree defines the key 
+with which it is associated. All the descendants of a node have
+a common prefix of the string associated with that node, and the root is associated with
+the empty string. Values are normally not associated with every node, only with leaves and
+some inner nodes that correspond to keys of interest. 
+
+The above description might seem a bit complex (and it is), suffice to say that JRuby
+has a Critbit implementation that follows the same API as a hash.  So, in simple words,
+a Critbit is a data structure that is similar to a hash, but that "automagically" sorts
+all the keys.
+
+The Critbit CSV reader will thous create a map similar to the maps we've seen in the
+examples above, however, data will be sorted by key instead of organized by reading order.
+Let's see some examples by reading again our customer.csv file and using :last_name and
+:first_name as dimensions
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("../data/customer.csv", format: :critbit,
+                     dimensions: [:last_name, :first_name])
+
+reader.filters = {:customer_no => Jcsv.int }
+
+reader.mapping = {:favourite_quote => false,
+                  :mailing_address => false,
+                  :birth_date => false,
+                  :email => false }
+
+customers = reader.read
+EOT
+
+console(<<-EOT)
+pp customers
+EOT
+
+body(<<-EOT)
+Note now that records were sorted by :last_name, :first_name.  In this case, the first
+record is "Down.Bob", then "Dunbar.John", etc.  Let's now change the order of the 
+dimensions in the directive and see the results:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("../data/customer.csv", format: :critbit,
+                     dimensions: [:first_name, :last_name])
+
+reader.filters = {:customer_no => Jcsv.int }
+
+reader.mapping = {:favourite_quote => false,
+                  :mailing_address => false,
+                  :birth_date => false,
+                  :email => false }
+
+customers = reader.read
+EOT
+
+console(<<-EOT)
+pp customers
+EOT
+
+body(<<-EOT)
+Now, as can be seen, "Alice.Wunderland" is the first record, then comes "Bill.Jobs", etc. 
+
+Another advantage of the critbit reader is that it is possible to retrieve records 
+according to their prefix.  For example, let's retrieve all customers whose names start with
+"B".  Two records will be retrieved "Bill Jobs" and "Bob Down". Let's do it now:
+EOT
+
+console(<<-EOT)
+customers.each_pair("B") do |key, value|
+  print(key)
+  print(" => ")
+  print(value)
+  print("\n")
+end
+EOT
+
+body(<<-EOT)
+It is also possible to use deep_map with the critbit reader.  We will not show an example here.
+EOT
+
+subsection("The Vector Reader")
+
+body(<<-EOT)
+
+EOT
+
 
 
 body(<<-EOT)

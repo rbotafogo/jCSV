@@ -246,6 +246,43 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
+    should "create new filters" do
+
+      reader = Jcsv.reader("../data/BJsales.csv", format: :map)
+
+      class RangeFilter < Jcsv::Filter
+
+        def initialize(start, final)
+          @start = start
+          @final = final
+          super()
+        end
+
+        def execute(value, context)
+          # check the constraint and raise an exception if ConstraintViolation
+          raise Jcsv::ConstraintViolation, "value not in range in #{context}" if
+            value < @start || value > @final
+          # Call next filter
+          exec_next(value, context)
+        end
+          
+      end
+      
+      rate = 3.75      # dollar to reais convertion rate
+      
+      reader.filters = {
+        :b_jsales => Jcsv.optional >> Jcsv.float(Locale::US) >>
+                     RangeFilter.new(0, 200) >> Jcsv.dynamic { |value| value * rate }
+      }
+
+      assert_raise ( Jcsv::ConstraintViolation ) { map = reader.read }
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
     should "gsub strings" do
 
       reader = Jcsv.reader("../data/customer.csv", format: :map)

@@ -215,14 +215,13 @@ class Jcsv
 
   class RBDynamic < Filter
 
-    def initialize(*args, block: nil)
-      @args = args
+    def initialize(block: nil)
       @block = block
       super()
     end
 
     def execute(value, context)
-      value = @block.call(value, *(@args)) if @block
+      value = @block.call(value, context) if @block
       exec_next(value, context)
     end
     
