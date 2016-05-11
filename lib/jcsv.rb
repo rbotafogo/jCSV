@@ -88,8 +88,8 @@ class Jcsv
     case format
     when :map, :critbit
       @reader = Jcsv::MapReader.new(*params)
-    when :vector
-      @reader = Jcsv::VectorReader.new(*params)
+    when :mdarray
+      @reader = Jcsv::MDArrayReader.new(*params)
     else
       @reader = Jcsv::ListReader.new(*params)
     end

@@ -21,7 +21,7 @@
 # OR MODIFICATIONS.
 ##########################################################################################
 
-# require 'mdarray'
+require 'mdarray'
 
 class Jcsv
 
@@ -29,7 +29,7 @@ class Jcsv
   #
   #========================================================================================
   
-  class VectorReader < MapReader
+  class MDArrayReader < MapReader
     include_package "java.io"
 
     #---------------------------------------------------------------------------------------
@@ -38,8 +38,22 @@ class Jcsv
 
     def initialize(*params)
 
+      filter = nil
+      
       @dtype = params[1].delete(:dtype)
-      params[1][:default_filter] = Jcsv[@dtype]
+      
+      case @dtype
+      when :byte, :short, :int
+        filter = Jcsv.int
+      when :long
+        filter = Jcsv.long
+      when :float, :double
+        filter = Jcsv.double
+      else
+        raise "Cannot create MDArray of dtype '#{@dtype}'"
+      end
+      
+      params[1][:default_filter] = filter
       super(*params)
       
     end
@@ -49,7 +63,6 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def read
-      # data = super
       to_mdarray(@dtype, super)
     end
 

@@ -39,8 +39,7 @@ class Jcsv
       begin
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        puts e.message
-        raise FilterError
+        raise FilterError, "#{e.message} in #{context}"
       end
     end
     
@@ -57,8 +56,7 @@ class Jcsv
       begin
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        puts e.message
-        raise FilterError
+        raise FilterError, "#{e.message} in #{context}"
       end
     end
     
@@ -75,8 +73,7 @@ class Jcsv
       begin
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        puts e.message
-        raise FilterError
+        raise FilterError, "#{e.message} in #{context}"
       end
     end
     
@@ -101,7 +98,6 @@ class Jcsv
     
     def execute(value, context)
       validateInputNotNull(value, context)
-      # raise "BigDecimal expects a String as input not #{value}" if !(value.is_a? String)
       value = value.gsub(@grouping_separator.chr, "").
               gsub(@decimal_separator.chr, ".").to_f
       exec_next(value, context)

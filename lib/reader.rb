@@ -181,6 +181,7 @@ class Jcsv
     attr_accessor :chunk_size
     
     attr_reader :headers
+    attr_reader :data_labels
     attr_reader :column_mapping
     attr_reader :dimensions_names
     
@@ -190,6 +191,23 @@ class Jcsv
     # Rows read.  Returned when reading a chunk of data
     attr_reader :rows
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def [](dim)
+
+      case true
+      when (dim == :data)
+        @data_labels
+      when (@dimensions_names.include? dim)
+        @dimensions.dimensions[dim].labels.keys
+      else
+        raise "Unknown dimension #{dim}"
+      end
+      
+    end
+    
     #---------------------------------------------------------------------------------------
     # Accepts the following options:
     # @param comment_starts: character at the beginning of the line that marks a comment
@@ -388,12 +406,22 @@ class Jcsv
         (head)? head.underscore.to_sym :
           (raise "Column is missing header")
       end unless @strings_as_keys
-
+=begin
       # Check dimensions names agains headers
       @dimensions_names.each do |dim_name|
         raise "Invalid dimension: #{dim_name} not in headers" if
           !@headers.include?(dim_name)
       end if @dimensions
+=end
+
+      if (@dimensions)
+        # Check dimensions names agains headers
+        @dimensions_names.each do |dim_name|
+          raise "Invalid dimension: #{dim_name} not in headers" if
+            !@headers.include?(dim_name)
+        end
+        @data_labels = @headers - @dimensions_names
+      end
 
       # initialize filters with the default filter
       init_filters
@@ -470,7 +498,7 @@ end
 
 require_relative 'list_reader'
 require_relative 'map_reader'
-require_relative 'vector_reader'
+require_relative 'mdarray_reader'
 
 
 =begin

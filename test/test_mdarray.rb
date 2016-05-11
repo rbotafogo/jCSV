@@ -42,10 +42,44 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
+    should "read balanced panel data" do
+
+      # person,year,income,age,sex
+      # 1,2001,1300,27,1
+      # 1,2002,1600,28,1
+      # 1,2003,2000,29,1
+      # 2,2001,2000,38,2
+      # 2,2002,2300,39,2
+      # 2,2003,2400,40,2
+
+      reader = Jcsv.reader("../data/balanced_panel.csv", format: :mdarray, dtype: :double,
+                           dimensions: [:person, :year])
+      balanced_panel = reader.read
+
+      assert_equal(["1", "2"], reader[:person])
+      assert_equal(["2001", "2002", "2003"], reader[:year])
+      assert_equal([:income, :age, :sex], reader[:data])
+
+      # Take a section of the MDArray.  Get all data values from person 1
+      balanced_panel.section([0, 0, 0],
+                             [1, reader[:year].size, reader[:data].size]).print
+
+      # Get the income for both persons for year 2001 and calculate their mean
+      puts balanced_panel.section([0, 0, 0],
+                                  [reader[:person].size, 1, 1], true).
+            reset_statistics.mean
+      
+    end
+=begin
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
     should "convert to MDArray" do
 
-      reader = Jcsv.reader("../data/sleep.csv", format: :vector, col_sep: ";",
-                           comment_starts: "#", dtype: :double, dimensions: [:group, :id])
+      reader = Jcsv.reader("../data/sleep.csv", format: :mdarray, col_sep: ";",
+                           comment_starts: "#", dtype: :float,
+                           dimensions: [:group, :id])
       reader.mapping = {:row => false}
       ssleep = reader.read
       ssleep.print
@@ -60,14 +94,14 @@ class CSVTest < Test::Unit::TestCase
 
     should "convert csv data to an MDArray" do
 
-      reader = Jcsv.reader("../data/epilepsy.csv", headers: true, format: :vector,
+      reader = Jcsv.reader("../data/epilepsy.csv", headers: true, format: :mdarray,
                            dtype: :double, dimensions: [:treatment, :subject, :period])
       treatment = reader.read
       # treatment.print
       treatment.slice(0,0).print
       
     end
-
+=end
   end
   
 end
