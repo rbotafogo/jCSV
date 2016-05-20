@@ -120,10 +120,10 @@ class Jcsv
           raise "Missing data: next expected label was '#{@labels.key(expected_value)}' but read '#{label}'."
         end
       else
-        # Trying to add a label when the dimension is frozen raises an exception
-        raise "Dimension '#{@name}' is frozen.  Cannot add label '#{label}'." if frozen
         @current_value = @labels[label] = @next_value
         @next_value += 1
+        # Trying to add a label when the dimension is frozen raises an exception
+        raise "Dimension '#{@name}' is frozen when adding label '#{label}'." if frozen
       end
 
       false

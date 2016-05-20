@@ -198,7 +198,7 @@ class Jcsv
     def [](dim)
 
       case true
-      when (dim == :data)
+      when (dim == :_data_)
         @data_labels
       when (@dimensions_names.include? dim)
         @dimensions.dimensions[dim].labels.keys

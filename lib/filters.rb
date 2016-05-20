@@ -233,16 +233,14 @@ class Jcsv
 
   class RBGsub < Filter
     
-    def initialize(*args, hsh: hsh, block: nil)
+    def initialize(*args, block: nil)
       @args = args
       @block = block
-      @hsh = hsh
       super()
     end
 
     def execute(value, context)
-      value = (@block)? @block.call(value, *(@args)) :
-                (@hsh.size == 0)? value.gsub(*(@args)) : value.gsub(*(@args), @hsh)
+      value = (@block)? @block.call(value, *(@args)) : value.gsub(*(@args))
       exec_next(value, context)
     end
     
@@ -254,17 +252,15 @@ class Jcsv
 
   class RBStringGeneric < Filter
 
-    def initialize(function, *args, hsh: hsh, block: nil)
+    def initialize(function, *args, block: nil)
       @function = function
       @args = args
       @block = block
-      @hsh = hsh
       super()
     end
 
     def execute(value, context)
-      value = (@hsh.size == 0)? value.send(@function, *(@args), &(@block)) :
-                value.send(@function, *(@args), @hsh, &(@block))
+      value = value.send(@function, *(@args), &(@block))
       exec_next(value, context)
     end
     
@@ -304,12 +300,12 @@ class Jcsv
     RBDynamic.new(*args, block: block)
   end
 
-  def self.gsub(*args, hsh: {}, &block)
-    RBGsub.new(*args, hsh: hsh, block: block)
+  def self.gsub(*args, &block)
+    RBGsub.new(*args, block: block)
   end
-
-  def self.str(function, *args, hsh: {}, &block)
-    RBStringGeneric.new(function, *args, hsh: hsh, block: block)
+  
+  def self.str(function, *args, &block)
+    RBStringGeneric.new(function, *args, block: block)
   end
   
 end

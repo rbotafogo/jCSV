@@ -288,7 +288,7 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/customer.csv", format: :map)
 
       reader.filters = {
-        :mailing_address => Jcsv.gsub(/[eao]/, hsh: {'e' => 3, 'o' => '*', 'a' => 'A'}),
+        :mailing_address => Jcsv.gsub(/[eao]/, 'e' => 3, 'o' => '*', 'a' => 'A'),        
         :first_name => Jcsv.gsub(/[aeiou]/, '*'),
         :last_name => Jcsv.gsub(/([aeiou])/, '<\1>'),
         :customer_no => Jcsv.gsub(/./) {|s| s.ord.to_s + ' '} >> Jcsv.fixnum
@@ -320,7 +320,7 @@ class CSVTest < Test::Unit::TestCase
         :last_name => Jcsv.str(:partition, "n"),
         :favourite_quote => Jcsv.str(:reverse) >> Jcsv.str(:prepend, "rev: ") >>
                             Jcsv.str(:[], 0, 20),
-        :email => Jcsv.str(:gsub, /[eao]/, hsh: {'e' => 3, 'o' => '*', 'a' => 'A'})
+        :email => Jcsv.str(:gsub, /[eao]/, 'e' => 3, 'o' => '*', 'a' => 'A')
       }
 
       map = reader.read
