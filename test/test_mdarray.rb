@@ -136,9 +136,19 @@ class CSVTest < Test::Unit::TestCase
       ssleep = reader.read
       # ssleep.print
       
-      group1 = ssleep.slice(0,0)
+      group1 = ssleep.slice(0, 0)
+      group2 = ssleep.slice(0, 1)
+
+      # Print many statistics about group1. Need to call reset_statistics on group1 to
+      # prepare it for calculations and clear all the caches.  Calculations are
+      # cached, for example, when the mean is calculated it will be cached.  When the
+      # standard deviation is calculated, there is no need to calculate the mean again,
+      # since it has already been calculated.  Thre problem with this approach is that
+      # if the array is changed in any way, then reset_statistics needs to be called
+      # again or all cached values will be returned again.
       group1.reset_statistics
 
+      puts "correlation group1 vs group2: " +  group1.correlation(group2).to_s
       puts "auto correlation: " + group1.auto_correlation(1).to_s
       puts "durbin watson: " + group1.durbin_watson.to_s
       puts "geometric mean: " + group1.geometric_mean.to_s
@@ -155,27 +165,27 @@ class CSVTest < Test::Unit::TestCase
       puts "product: " + group1.product.to_s
       puts "quantile(0.2): " + group1.quantile(0.2).to_s
       puts "quantile inverse(35.0): " + group1.quantile_inverse(35.0).to_s
-      puts group1.rank_interpolated(33.0)
-      puts group1.rms
-      puts group1.sample_kurtosis
-      puts group1.sample_kurtosis_standard_error
-      puts group1.sample_skew
-      puts group1.sample_skew_standard_error
-      puts group1.sample_standard_deviation
-      puts group1.sample_variance
-      puts group1.skew
-      puts group1.standard_deviation
-      puts group1.standard_error
-      puts group1.sum
-      puts group1.sum_of_inversions
-      puts group1.sum_of_logarithms
-      puts group1.sum_of_power_deviations(2, group1.mean)
-      puts group1.sum_of_powers(3)
-      puts group1.sum_of_squares
-      puts group1.sum_of_squared_deviations
-      puts group1.trimmed_mean(2, 2)
-      puts group1.variance
-      puts group1.winsorized_mean(1, 1)
+      puts "rank interpolated(33.0): " + group1.rank_interpolated(33.0).to_s
+      puts "rms: " + group1.rms.to_s
+      puts "sample kurtosis: " + group1.sample_kurtosis.to_s
+      puts "sample kurtosis standard error: " + group1.sample_kurtosis_standard_error.to_s
+      puts "sample skew: " + group1.sample_skew.to_s
+      puts "sample skew standard error: " + group1.sample_skew_standard_error.to_s
+      puts "sample standard deviation: " + group1.sample_standard_deviation.to_s
+      puts "sample variance: " + group1.sample_variance.to_s
+      puts "skew: " + group1.skew.to_s
+      puts "standard deviation: " + group1.standard_deviation.to_s
+      puts "standard error: " + group1.standard_error.to_s
+      puts "sum: " + group1.sum.to_s
+      puts "sum of inversions: " + group1.sum_of_inversions.to_s
+      puts "sum of logarithms: " + group1.sum_of_logarithms.to_s
+      puts "sum of power deviations: " + group1.sum_of_power_deviations(2, group1.mean).to_s
+      puts "sum of powers(3): " + group1.sum_of_powers(3).to_s
+      puts "sum of squares: " + group1.sum_of_squares.to_s
+      puts "sum of squared deviations: " + group1.sum_of_squared_deviations.to_s
+      puts "trimmed_mean(2, 2): " + group1.trimmed_mean(2, 2).to_s
+      puts "variance: " + group1.variance.to_s
+      puts "winsorized mean: " + group1.winsorized_mean(1, 1).to_s
       
     end
 =begin

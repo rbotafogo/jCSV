@@ -60,7 +60,7 @@ In order to eliminate those restrictions, smarter_csv was developed.  Although i
 remove those restrictions it removes support for Arrays of Arrays.  Altough such format 
 is really 'very close to metal' in some cases this is actually what is needed.  This format
 is less memory intensive than the 'hash' approach from smarter_csv and it might make it
-easier to put the date in a simple table.  When reading scientific data, such as an matrix
+easier to put the data in a simple table.  When reading scientific data, such as a matrix
 or multidimensional array, it might also be better to remove headers and informational
 columns and read the actual data as just a plain array.
 
@@ -97,7 +97,7 @@ When reading panel data, organize data as maps of maps (deep_map);
 
 Able to read files with headers or no-headers;
 
-When the file has no-headers, allow the user to provide headers so that reading can 
+When the file has no-headers, allows the user to provide headers so that reading can 
 be done either as array of arrays, array of hashes, or multidimensional with keys;
 
 Able to process large CSV-files;
@@ -122,13 +122,13 @@ Able to change columns´ order, when reading to an Array of Arrays;
 Provide dozens of filters/validators for the data;
 
 Filters can be chained allowing for complex data manipulation.  For instance, 
-suppose one column can have empty values or dollar values.  If it is a dollar values, 
+suppose one column can have empty values or dollar values.  If it is a dollar value, 
 then it should be a float.  Consider that the data is stored using a Brazilian 
 locale format, i.e., decimal separator is ‘,’ and grouping is ‘.’ (the reverse of 
 US locale).  Suppose also that the value should be in the range of US$ 1.000,00 and 
 US$ 2.000,00 and finally suppose that we actually want to see this data not as 
 dollar amounts but as Brazilian Reais, converted with the day´s current rate.  
-Then this sequence of filters should do it:
+Then this sequence of filters does what is required:
 EOT
 
 comment_code(<<-EOT)
@@ -255,7 +255,7 @@ reader = Jcsv.reader("../data/customer.csv", headers: true, strings_as_keys: tru
 EOT
 
 
-comment_code(<<-EOT)
+code(<<-EOT)
 reader.read do |line_no, row_no, row, headers|
   puts "line number: \#{line_no}, row number: \#{row_no}"
   headers.each_with_index do |head, i|
@@ -264,18 +264,6 @@ reader.read do |line_no, row_no, row, headers|
   puts
 end
 EOT
-
-#console(<<-EOT)
-reader = Jcsv.reader("../data/customer.csv", strings_as_keys: true)
-reader.read do |line_no, row_no, row, headers|
-  puts "line number: #{line_no}, row number: #{row_no}"
-  headers.each_with_index do |head, i|
-    puts "#{head}: #{row[i]}"
-  end
-  puts
-end
-#EOT
-
 
 subsection("Default Filter and Filters")
 
@@ -693,6 +681,18 @@ EOT
 console(<<-EOT)
 pp reader.dimensions[:treatment].labels
 pp reader.dimensions[:period].labels
+EOT
+
+body(<<-EOT)
+Since getting the labels for dimensions is quite often necessary, there is a 
+shortcut for getting it.  Note that dimension :_data_ represents the headers
+of the data dimension.
+EOT
+
+console(<<-EOT)
+pp reader[:treatment]
+pp reader[:period]
+pp reader[:_data_]
 EOT
 
 body(<<-EOT)
@@ -1134,10 +1134,7 @@ EOT
 
 console(<<-EOT)
 customers.each_pair("B") do |key, value|
-  print(key)
-  print(" => ")
-  print(value)
-  print("\n")
+  puts "\#{key} => \#{value}"
 end
 EOT
 
@@ -1145,10 +1142,306 @@ body(<<-EOT)
 It is also possible to use deep_map with the critbit reader.  We will not show an example here.
 EOT
 
-subsection("The Vector Reader")
+section("The MDArray Reader")
 
 body(<<-EOT)
+CSV files are often used to convey scientific data.  Scientific data is numerical 
+data that is the result of some experiment or data collection and is collected for 
+further analysis.  In general, scientific data is stored in an array or dataframe and 
+analyzed statistically or mathematically.  The MDArray reader will read data and
+store it directly in an MDArray.  MDArray is a JRuby library for multidimensional arrays  
+similar to NumPy that integrates with Parallel Colt (through MDMatrix) for strong
+statistical analysis and integrates also with SciCom (an R interpreter for the 
+JVM).
 
+To show how to use the MDArray reader we will come back to our balanced and
+unbalanced panel data from the "Dimension" section.  Let's start by reading
+the balanced data that we show again here:
+EOT
+
+subsection("Balanced Panel Data")
+
+comment_code(<<-EOT)
+person,year,income,age,sex
+1,2001,1300,27,1
+1,2002,1600,28,1
+1,2003,2000,29,1
+2,2001,2000,38,2
+2,2002,2300,39,2
+2,2003,2400,40,2
+EOT
+
+body(<<-EOT)
+In order to read an MDArray we need to pass :mdarray to the format: parameter and
+also give it the MDArray data type 'dtype'.  MDArray supports the following 
+data types: :byte, :char, :short, :int, :long, :float, :double.  However, in 
+this version of jCSV we do not support filters for all those types, so the 
+user needs to be careful to implement her own filters when necessary.
+
+In this example, we have two dimensions: person and year.
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("../data/balanced_panel.csv", format: :mdarray, dtype: :double,
+                     dimensions: [:person, :year])
+balanced_panel = reader.read
+EOT
+
+body(<<-EOT)
+First let's check again our dimensions' labels
+EOT
+
+console(<<-EOT)
+pp reader[:person]
+pp reader[:year]
+pp reader[:_data_]
+EOT
+
+body(<<-EOT)
+And let's now see our MDArray with the balanced data:
+EOT
+
+console(<<-EOT)
+balanced_panel.print
+EOT
+
+body(<<-EOT)
+Note that this is a multidimensional array with rank 3.  The array rank is the number
+of "dimensions" in the array.  As we have seen above, for this example there are
+three dimensions: 'person', 'year' and '_data_'.  The '_data_' dimension is a special
+dimension that has the actual data columns.  The 'shape' of the array is the 
+number of elements per dimensions.  
+EOT
+
+console(<<-EOT)
+p balanced_panel.shape
+EOT
+
+body(<<-EOT)
+MDArray has many methods to slice and dice the array.  Let's use method slice, that 
+gets a slice of the array without copying, to get only the data from person 1, 
+which is in index 0 of the MDArray:
+EOT
+
+console(<<-EOT)
+balanced_panel.slice(0, 0).print
+EOT
+
+body(<<-EOT)
+Another such method is method 'section'.  This method takes two parameters: the first
+is the beginning index for the given dimension, and the second parameter is the 
+number of elements to be taken in that dimension.  In the example bellow, we will
+again get all elements from person 1.  The first parameter is [0, 0, 0] since we want
+all elements for person 1 and all indices start with 0.  For the second parameter we
+use [1, reader[:year].size, reader[:_data_].size].  The first element is '1' indicating
+that we only want 1 element for the persons' dimension.  Then we got the size of the
+year dimension and the size of the _data_ dimension:
+EOT
+
+console(<<-EOT)
+balanced_panel.section([0, 0, 0],
+                       [1, reader[:year].size, reader[:_data_].size]).print
+EOT
+
+body(<<-EOT)
+Let's now get a section for only the year 2002 for this same person.  Also, let's
+only get columns 'age' and 'sex'. Since the year 2002 is the second row in our data, 
+then we want to start in index 1 and get 1 element.  For the data part, we want
+to start on index 1 and get 2 elements:
+EOT
+
+console(<<-EOT)
+balanced_panel.section([0, 1, 1], [1, 1, 2]).print
+EOT
+
+body(<<-EOT)
+Note that the result above is still a rank 3 array.  If we pass as a third parameter
+of 'true' to the section method, empty ranks are removed from the array, giving us:
+EOT
+
+console(<<-EOT)
+balanced_panel.section([0, 1, 1], [1, 1, 2], true).print
+EOT
+
+body(<<-EOT)
+We started this section saying that scientific data is collected for further analysis.
+We will now read data from the 'sleep.csv' file from R.  This dataset shows the 
+effect of two soporific drugs (increase in hours of sleep compared to control) 
+on 10 patients:
+EOT
+
+code(<<-EOT)
+reader = Jcsv.reader("../data/sleep.csv", format: :mdarray, col_sep: ";",
+                     comment_starts: "#", dtype: :double,
+                     dimensions: [:group, :id])
+
+reader.mapping = {:row => false}
+
+ssleep = reader.read
+ssleep.print
+
+group1 = ssleep.slice(0, 0)
+group2 = ssleep.slice(0, 1)
+EOT
+
+body(<<-EOT)
+And now, let's get many interesting statistics on this data. We will focus on 'group1'. 
+Need to call reset_statistics on group1 to prepare it for calculations and clear 
+all the caches.  Calculations are cached, for example, when the 'mean' is calculated 
+it will be cached.  When the standard deviation is calculated, there is no need to 
+calculate the mean again, since it has already been calculated.  There problem with 
+this approach that if the array is changed in any way, then reset_statistics needs to be 
+called again or all cached values will be returned and wrong results will be obtained.
+EOT
+
+console(<<-EOT)
+group1.reset_statistics
+
+puts "correlation group1 vs group2: " +  group1.correlation(group2).to_s
+puts "auto correlation: " + group1.auto_correlation(1).to_s
+puts "durbin watson: " + group1.durbin_watson.to_s
+puts "geometric mean: " + group1.geometric_mean.to_s
+puts "harmonic mean: " + group1.harmonic_mean.to_s
+puts "kurtosis: " + group1.kurtosis.to_s
+puts "lag1: " + group1.lag1.to_s
+puts "max: " + group1.max.to_s
+puts "mean: " + group1.mean.to_s
+puts "mean deviation: " + group1.mean_deviation.to_s
+puts "median: " + group1.median.to_s
+puts "min: " + group1.min.to_s
+puts "moment3: " + group1.moment3.to_s
+puts "moment4: " + group1.moment4.to_s
+puts "product: " + group1.product.to_s
+puts "quantile(0.2): " + group1.quantile(0.2).to_s
+puts "quantile inverse(35.0): " + group1.quantile_inverse(35.0).to_s
+puts "rank interpolated(33.0): " + group1.rank_interpolated(33.0).to_s
+puts "rms: " + group1.rms.to_s
+puts "sample kurtosis: " + group1.sample_kurtosis.to_s
+puts "sample kurtosis standard error: " + group1.sample_kurtosis_standard_error.to_s
+puts "sample skew: " + group1.sample_skew.to_s
+puts "sample skew standard error: " + group1.sample_skew_standard_error.to_s
+puts "sample standard deviation: " + group1.sample_standard_deviation.to_s
+puts "sample variance: " + group1.sample_variance.to_s
+puts "skew: " + group1.skew.to_s
+puts "standard deviation: " + group1.standard_deviation.to_s
+puts "standard error: " + group1.standard_error.to_s
+puts "sum: " + group1.sum.to_s
+puts "sum of inversions: " + group1.sum_of_inversions.to_s
+puts "sum of logarithms: " + group1.sum_of_logarithms.to_s
+puts "sum of power deviations: " + group1.sum_of_power_deviations(2, group1.mean).to_s
+puts "sum of powers(3): " + group1.sum_of_powers(3).to_s
+puts "sum of squares: " + group1.sum_of_squares.to_s
+puts "sum of squared deviations: " + group1.sum_of_squared_deviations.to_s
+puts "trimmed_mean(2, 2): " + group1.trimmed_mean(2, 2).to_s
+puts "variance: " + group1.variance.to_s
+puts "winsorized mean: " + group1.winsorized_mean(1, 1).to_s
+EOT
+
+subsection("Unbalanced Panel Data")
+
+
+section("Filters")
+
+body(<<-EOT)
+We have already seen many filters in action during this whole document.  We now present
+all filters available.
+EOT
+
+subsection("Non-numeric Filters")
+
+list(<<-EOT)
+bool
+
+convert_nil_to
+
+optional
+
+char
+
+collector
+
+ipaddr
+
+dynamic
+
+gsub
+
+str
+EOT
+
+subsection("Date Filters")
+
+list(<<-EOT)
+httpdate
+
+iso8601
+
+jd
+
+jisx0301
+
+date
+
+rfc2822
+
+rfc3339
+
+rfc822
+
+strptime
+
+xmlschema
+EOT
+
+subsection("Numeric Filters")
+
+list(<<-EOT)
+int
+
+long
+
+double
+
+fixnum
+
+float
+
+complex
+
+rational
+
+bignun
+
+bigdecimal: Convert a String to a BigDecimal. It uses the String constructor of BigDecimal
+(new BigDecimal("0.1")) as it yields predictable results (see BigDecimal).  If the 
+data uses a character other than "." as a decimal separator (Germany uses ","
+for example), then pass to it a Locale.
+EOT
+
+subsection("Constraints")
+
+list(<<-EOT)
+in_range
+
+equals
+
+ascii_only?
+
+not_ascii?
+
+empty
+
+end_with?
+
+include
+
+start_with
+
+not_nil
+
+forbid_substrings
+
+is_element_of
 EOT
 
 
