@@ -1,2 +1,2 @@
-$gem_name = "jCSV"
-$version="0.5.0"
+$gem_name = "mdarray-jCSV"
+$version="0.6.1"

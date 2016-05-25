@@ -73,21 +73,21 @@ class CSVTest < Test::Unit::TestCase
 
     should "work with Locales" do
       
-      locale = Locale.default
+      locale = Jcsv::Locale.default
       puts "Your locale country is: #{locale.display_country}"
 
       # Switch default locale to France, so display_country will be in French.
-      locale = Locale.default = Locale::FRANCE
+      locale = Jcsv::Locale.default = Jcsv::Locale::FRANCE
       assert_equal("français", locale.display_language)
       assert_equal("France", locale.display_country)
 
       # Create a new locale, but default is still France, so output is in French.
-      loc2 = Locale.new(language: "en", country: "US")
+      loc2 = Jcsv::Locale.new(language: "en", country: "US")
       assert_equal("en-US", loc2.to_language_tag)
       assert_equal("US", loc2.country)
       assert_equal("Etats-Unis", loc2.display_country)
 
-      locale = Locale::US
+      locale = Jcsv::Locale::US
       p locale
     end
 =end        
@@ -108,14 +108,14 @@ class CSVTest < Test::Unit::TestCase
       reader.filters = {
         :int => Jcsv.int >> Jcsv.in_range(200, 300),
         :double => Jcsv.float,
-        :double2 => Jcsv.float(Locale::US),
+        :double2 => Jcsv.float(Jcsv::Locale::US),
         :long => Jcsv.long,
         :complex => Jcsv.complex,
         :rational => Jcsv.rational,
         :big_num => Jcsv.bignum,
-        :big_decimal => Jcsv.big_decimal(Locale::US),
-        :big_decimal2 => Jcsv.big_decimal(Locale::BRAZIL),
-        :big_decimal3 => Jcsv.big_decimal(Locale::BRAZIL),
+        :big_decimal => Jcsv.big_decimal(Jcsv::Locale::US),
+        :big_decimal2 => Jcsv.big_decimal(Jcsv::Locale::BRAZIL),
+        :big_decimal3 => Jcsv.big_decimal(Jcsv::Locale::BRAZIL),
         :truth1 => Jcsv.bool,
         :truth2 => bool,
         :truth3 => bool,
@@ -228,9 +228,9 @@ class CSVTest < Test::Unit::TestCase
       reader = Jcsv.reader("../data/BJsales.csv", format: :map)
 
       rate = 3.75      # dollar to reais convertion rate
-      
+
       reader.filters = {
-        :b_jsales => Jcsv.optional >> Jcsv.float(Locale::US) >>
+        :b_jsales => Jcsv.optional >> Jcsv.float(Jcsv::Locale::US) >>
                      Jcsv.in_range(0, 300) >> Jcsv.dynamic { |value| value * rate }
       }
       
@@ -271,7 +271,7 @@ class CSVTest < Test::Unit::TestCase
       rate = 3.75      # dollar to reais convertion rate
       
       reader.filters = {
-        :b_jsales => Jcsv.optional >> Jcsv.float(Locale::US) >>
+        :b_jsales => Jcsv.optional >> Jcsv.float(Jcsv::Locale::US) >>
                      RangeFilter.new(0, 200) >> Jcsv.dynamic { |value| value * rate }
       }
 
