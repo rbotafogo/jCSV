@@ -76,22 +76,29 @@ class Jcsv
       
       prod = nil
       shape = []
+      vector = []
       
       columns = @column_mapping.mapping - [true, false, nil]
-      
-      @dimensions.dimensions_names.each do |name|
-        keys = @dimensions[name].labels.keys
-        shape << keys.size
-        prod = (prod.nil?)? keys : prod.product(keys)
-      end
-      
       header_size = columns.size
-      shape << header_size
-      vector = Array.new
-      
-      prod.each do |k|
-        row = storage[k.flatten.join(".")]
-        vector.concat(((row.nil?)? ([Float::NAN] * header_size) : row.values))
+
+      if (@dimensions.nil?)
+        shape = [storage.size, header_size]
+        storage.each do |line|
+          vector.concat(line.values)
+        end
+      else
+        @dimensions.dimensions_names.each do |name|
+          keys = @dimensions[name].labels.keys
+          shape << keys.size
+          prod = (prod.nil?)? keys : prod.product(keys)
+        end
+        
+        shape << header_size
+        
+        prod.each do |k|
+          row = (@dimensions.dimensions_names.size > 1)? storage[k.flatten.join(".")] : storage[k]
+          vector.concat(((row.nil?)? ([Float::NAN] * header_size) : row.values))
+        end
       end
 
       array = MDArray.build(@dtype, shape, vector)

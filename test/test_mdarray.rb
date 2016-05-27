@@ -28,7 +28,7 @@ require 'mdarray'
 
 require_relative '../config'
 
-require 'jcsv'
+require 'mdarray-jcsv'
 
 class CSVTest < Test::Unit::TestCase
 
@@ -37,6 +37,39 @@ class CSVTest < Test::Unit::TestCase
     setup do
 
     end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "read data without dimensions" do
+
+      vale = Jcsv.reader("../data/VALE_2014.csv", format: :mdarray, dtype: :double)
+      # need to drop date, as this is not a double and we did not make it a
+      # dimension
+      vale.mapping = {:date => false}
+      data = vale.read
+      assert_equal(8.24, data[0, 0])
+      assert_equal(7.79, data[15, 2])
+      assert_equal(13.512299, data[251, 5])
+
+    end
+
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "read data with one dimension" do
+
+      vale = Jcsv.reader("../data/VALE_2014.csv", format: :mdarray, dtype: :double,
+                         dimensions: [:date])
+      data = vale.read
+      assert_equal(8.24, data[0, 0])
+      assert_equal(7.79, data[15, 2])
+      assert_equal(13.512299, data[251, 5])
+
+    end
+
 
     #-------------------------------------------------------------------------------------
     #
@@ -188,21 +221,7 @@ class CSVTest < Test::Unit::TestCase
       puts "winsorized mean: " + group1.winsorized_mean(1, 1).to_s
       
     end
-=begin
-    #-------------------------------------------------------------------------------------
-    #
-    #-------------------------------------------------------------------------------------
-
-    should "convert csv data to an MDArray" do
-
-      reader = Jcsv.reader("../data/epilepsy.csv", headers: true, format: :mdarray,
-                           dtype: :double, dimensions: [:treatment, :subject, :period])
-      treatment = reader.read
-      # treatment.print
-      treatment.slice(0,0).print
-      
-    end
-=end
+    
   end
   
 end
