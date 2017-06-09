@@ -58,7 +58,8 @@ class Jcsv
       @headers.each_with_index do |h, i|
         next if @dimensions && !@dimensions[h].nil?
         name = column_mapping[h]
-        raise "'true' is not allowed as a mapping: #{column_mapping}" if name == true
+        raise ArgumentError.new("'true' is not allowed as a mapping: #{column_mapping}") if
+          name == true
         @column_mapping.mapping[i] = (name.nil?)? h : name
       end
 
@@ -91,9 +92,8 @@ class Jcsv
       else # block given
         parse_with_block(&block)
       end
-    
     end
-
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -107,11 +107,12 @@ class Jcsv
     def new_reader(preferences)
       
       begin
-        raise "Reading file as map requires headers." if (!@headers && !@custom_headers)
+        raise MissingHeadersError.new("Reading file as map requires headers.") if
+          (!@headers && !@custom_headers)
         @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions,
                           @suppress_warnings)
       rescue java.io.IOException => e
-        puts e
+        raise IOError.new(e.message)
       end
 
     end
@@ -169,12 +170,13 @@ class Jcsv
               last = key.pop
               if (key.inject(rows, :fetch)[last] != {})
                 # p "overriding value for key: #{chunk[:key]} with #{chunk}"
-                raise "Key #{row[:key]} not unique for this dataset. #{row}"
+                raise DuplicateKeyError.new("Key #{row[:key]} not unique for this dataset. #{row}")
               end
               key.inject(rows, :fetch)[last] = row
             else # not a deep map
               key = row.delete(:key).join(".")
-              raise "Key #{key} not unique for this dataset. #{row}" if rows.has_key?(key)
+              raise DuplicateKeyError.new("Key #{key} not unique for this dataset. #{row}") if
+                rows.has_key?(key)
               rows.merge!({key => row})
             end
           end
@@ -183,9 +185,8 @@ class Jcsv
       else # no dimensions
         super
       end
-      
     end
-    
+      
   end
-  
+    
 end

@@ -74,7 +74,7 @@ class Jcsv
           @filters[i] = processor
         end
       else
-        raise "Filters parameters should either be a hash or an array of filters"
+        raise ArgumentError.new("Filters parameters should either be a hash or an array of filters")
       end
       
     end
@@ -123,7 +123,7 @@ class Jcsv
       
       case filters
       when Hash
-        raise "CSV file does not have headers.  Cannot match filters with headers"
+        raise MissingHeadersError.new("CSV file does not have headers.  Cannot match filters with headers")
       when Array
         @filters = []
 
@@ -137,7 +137,7 @@ class Jcsv
           @filters[i] = processor
         end
       else
-        raise "Filters parameters should be an array of filters"
+        raise ArgumentError.new("Filters parameters should be an array of filters")
       end
       
     end
@@ -203,7 +203,7 @@ class Jcsv
       when (@dimensions_names.include? dim)
         @dimensions.dimensions[dim].labels.keys
       else
-        raise "Unknown dimension #{dim}"
+        raise ArgumentError.new("Unknown dimension #{dim}")
       end
       
     end
@@ -350,7 +350,7 @@ class Jcsv
     def read_chunk
 
       return @reader.read(@column_mapping, @filters) if @chunk_size == 0
-
+      
       rows = Array.new
       (1..@chunk_size).each do |i|
         if ((row = @reader.read(@column_mapping, @filters)).nil?)
@@ -404,20 +404,13 @@ class Jcsv
       # Convert headers to symbols, unless user specifically does not want it
       @headers.map! do |head|
         (head)? head.underscore.to_sym :
-          (raise "Column is missing header")
+          (raise MissingHeadersError.new("Column is missing header"))
       end unless @strings_as_keys
-=begin
-      # Check dimensions names agains headers
-      @dimensions_names.each do |dim_name|
-        raise "Invalid dimension: #{dim_name} not in headers" if
-          !@headers.include?(dim_name)
-      end if @dimensions
-=end
-
+      
       if (@dimensions)
         # Check dimensions names agains headers
         @dimensions_names.each do |dim_name|
-          raise "Invalid dimension: #{dim_name} not in headers" if
+          raise ArgumentError.new("Invalid dimension: #{dim_name} not in headers") if
             !@headers.include?(dim_name)
         end
         @data_labels = @headers - @dimensions_names

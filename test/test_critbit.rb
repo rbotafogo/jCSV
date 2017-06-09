@@ -225,8 +225,8 @@ class CSVTest < Test::Unit::TestCase
                            default_filter: Jcsv.int)
 
       # Raises an error, since mapping to true is not defined
-      assert_raise ( RuntimeError ) { reader.mapping =
-                                      {:treatment => false, :patient => true} }
+      assert_raise ( ArgumentError ) { reader.mapping =
+                                       {:treatment => false, :patient => true} }
 
     end
 
@@ -332,7 +332,7 @@ class CSVTest < Test::Unit::TestCase
 
       # will raise an exception as :period is not a key.  Will break as soon as we read the
       # first period for the second user
-      assert_raise ( RuntimeError ) { reader.read[0] }
+      assert_raise ( Jcsv::DuplicateKeyError ) { reader.read[0] }
 
     end
 

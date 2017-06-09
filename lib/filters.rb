@@ -32,11 +32,23 @@ class Jcsv
   #
   #========================================================================================
 
-  class FilterError < RuntimeError
+  class Error < RuntimeError
+
+  end
+  
+  class FilterError < Jcsv::Error
 
   end
 
-  class ConstraintViolation < RuntimeError
+  class ConstraintViolation < Jcsv::Error
+
+  end
+
+  class MissingHeadersError < Jcsv::Error
+
+  end
+
+  class DuplicateKeyError < Jcsv::Error
 
   end
 
@@ -112,9 +124,7 @@ class Jcsv
       begin
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        puts e.message
-        # puts e.print_stack_trace
-        raise FilterError
+        raise FilterError.new("#{e.message} in:\n #{context}")
       end
       
     end
@@ -167,8 +177,7 @@ class Jcsv
       begin
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        puts e.message
-        raise FilterError
+        raise FilterError.new("#{e.message} in:\n #{context}")
       end
     end
     

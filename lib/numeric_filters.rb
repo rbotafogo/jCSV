@@ -39,7 +39,7 @@ class Jcsv
       begin
         exec_next(super(value, context), context)
       rescue org.supercsv.exception.SuperCsvCellProcessorException => e
-        raise FilterError, "#{e.message} in #{context}"
+        raise FilterError.new("#{e.message} in #{context}")
       end
     end
     

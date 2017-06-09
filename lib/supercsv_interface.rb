@@ -125,7 +125,7 @@ class Jcsv
             end
           end
         rescue SuperCsvConstraintViolationException => e
-          raise "Constraint violation: #{context.toString}"
+          raise Jcsv::ContraintViolation.new("Constraint violation: #{context.toString}")
         end
         
       end
@@ -205,7 +205,7 @@ class Jcsv
       # executeProcessor from module Processors
       @processed_columns = Hash.new
       @column_mapping = column_mapping
-      
+
       (filters == false)? super(*column_mapping.mapping) :
         filter_input(column_mapping, filters.values.to_java(CellProcessor))
       
@@ -216,11 +216,13 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def filter_input(name_mapping, processors)
+      
       if (readRow())
         processed_columns = executeProcessors(processors)
         processed_columns[:key] = @key_array if dimensions
         return processed_columns
       end
+      
     end
 
   end

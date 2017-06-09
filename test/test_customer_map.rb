@@ -123,8 +123,9 @@ class CSVTest < Test::Unit::TestCase
     should "raise exception if no header when reading map" do
 
       # Will raise an exception as reading a file as map requires the header
-      assert_raise ( RuntimeError ) { Jcsv.reader("../data/customer.csv", format: :map,
-                                                  headers: false) }
+      assert_raise ( Jcsv::MissingHeadersError ) {
+        Jcsv.reader("../data/customer.csv", format: :map, headers: false)
+      }
 
     end
 
@@ -132,7 +133,7 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
-    should "raise exception when filters are invalid" do
+    should "raise ConstraintViolation" do
 
       reader = Jcsv.reader("../data/customer.csv", format: :map, default_filter: Jcsv.not_nil,
                            headers: true, strings_as_keys: true)
@@ -151,6 +152,31 @@ class CSVTest < Test::Unit::TestCase
       
     end
 
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
+    should "catch FilterError" do
+
+      reader = Jcsv.reader("../data/customer.csv", format: :map, headers: true,
+                           strings_as_keys: true)
+      # Set numberOfKids and married as optional, otherwise an exception will be raised
+      reader.filters = {"numberOfKids" => Jcsv.optional >> Jcsv.int,
+                        "loyaltyPoints" => Jcsv.bool,
+                        "customerNo" => Jcsv.int,
+                        "birthDate" => Jcsv.date("dd/mm/yyyy")}
+
+      begin
+        reader.read do |line_no, row_no, row, headers|
+          p row
+        end
+      rescue Jcsv::FilterError => e
+        puts e.message
+        retry
+      end
+      
+    end
+      
     #-------------------------------------------------------------------------------------
     #
     #-------------------------------------------------------------------------------------

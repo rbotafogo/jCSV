@@ -203,8 +203,8 @@ class CSVTest < Test::Unit::TestCase
                            default_filter: Jcsv.int)
 
       # Raises an error, since mapping to true is not defined
-      assert_raise ( RuntimeError ) { reader.mapping =
-                                      {:treatment => false, :patient => true} }
+      assert_raise ( ArgumentError ) { reader.mapping =
+                                       {:treatment => false, :patient => true} }
 
     end
 #=end    
