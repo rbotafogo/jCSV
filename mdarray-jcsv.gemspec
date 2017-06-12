@@ -25,7 +25,7 @@ EOF
   gem.authors  = ['Rodrigo Botafogo']
   gem.email    = 'rodrigo.a.botafogo@gmail.com'
   gem.homepage = 'http://github.com/rbotafogo/jCSV/wiki'
-  gem.license = 'Apache-2.0'
+  gem.license = 'BSD-2-Clause'
 
   gem.add_runtime_dependency('mdarray', '~> 0.5')
   gem.add_runtime_dependency('critbit', '~> 0.5')
@@ -38,7 +38,8 @@ EOF
   
   # ensure the gem is built out of versioned files
   gem.files = Dir['Rakefile', 'version.rb', 'config.rb', '{lib,test}/**/*.rb', 'test/**/*.csv',
-                  'test/**/*.xlsx', '{bin,doc,spec,vendor,target,data}/**/*', 
+                  'test/**/*.xlsx',
+                  '{bin,doc,spec,vendor,target}/**/*', 
                   'README*', 'LICENSE*'] # & `git ls-files -z`.split("\0")
 
   gem.test_files = Dir['test/*.rb']
