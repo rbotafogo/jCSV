@@ -54,11 +54,6 @@ class Jcsv
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
-
-    
-    #---------------------------------------------------------------------------------------
-    #
-    #---------------------------------------------------------------------------------------
     
     def filters=(filters)
       
@@ -186,6 +181,7 @@ class Jcsv
     attr_reader :data_labels
     attr_reader :column_mapping
     attr_reader :dimensions_names
+    attr_reader :subtotals
     
     # last processed column
     attr_reader :processed_column   
@@ -243,7 +239,8 @@ class Jcsv
                    chunk_size: 0,
                    deep_map: false,
                    dimensions: nil,
-                   suppress_warnings: false)
+                   suppress_warnings: false,
+                   subtotals: nil)
       
       @filename = filename
       @col_sep = col_sep
@@ -263,7 +260,8 @@ class Jcsv
       @dimensions_names = dimensions
       @column_mapping = Mapping.new
       @suppress_warnings = suppress_warnings
-      
+      @subtotals = subtotals
+
       prepare_dimensions if dimensions
 
       # set all preferences.  To create a new reader we need to have the dimensions already
@@ -273,7 +271,7 @@ class Jcsv
       # Dynamic class change without writing subclasses. When headers, extend this class
       # with methods that assume there is a header, when no headers, then extend this class
       # with methods that know there is no header.  Could have being done with subclasses,
-      # but this would all subclasses to have two subclasses one inheriting from the header
+      # but this would require subclasses to have two subclasses one inheriting from the header
       # class and one inheriting from the headerless classes.  In this way we reduce the
       # subclasses need.
       @headers? prepare_headers : (@custom_headers? set_headers(@custom_headers) :
@@ -282,7 +280,11 @@ class Jcsv
       # if there are dimensions, then we need to prepare the mappings accordingly.  With
       # dimensions defined, users cannot defined mappings.
       dimensions_mappings if dimensions
-            
+
+      # p @subtotals
+      # p @headers
+      # p @dimensions.dimensions_names
+
     end
 =begin    
     #---------------------------------------------------------------------------------------
@@ -318,7 +320,8 @@ class Jcsv
       end
       
     end
-    
+
+=begin    
     #---------------------------------------------------------------------------------------
     # Both map_reader and list_reader have a mapping= method.  Is this really necessary?
     # FIX!!!!
@@ -328,7 +331,8 @@ class Jcsv
       p "reader.rb mapping =.  FIX!"
       @column_mapping.map = map
     end
-
+=end
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -337,6 +341,14 @@ class Jcsv
       @reader.dimensions
     end
 
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def subtotals
+      @reader.subtotals
+    end
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
@@ -465,7 +477,7 @@ class Jcsv
 
       if ((!@dimensions_names.nil?) && (@dimensions_names.size != 0))
         # || options[:keep_original_headers]
-        @dimensions_names.map! { |x| x.downcase.to_sym } unless @strings_as_keys
+        # @dimensions_names.map! { |x| x.downcase } unless @strings_as_keys
         @dimensions = Dimensions.new(@dimensions_names)
       end
             

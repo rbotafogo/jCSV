@@ -94,6 +94,7 @@ class Jcsv
       @key_array = Array.new
       
       source.each_with_index do |s, i|
+        s.strip! if !s.nil?
         begin
           # is @column_mapping[i] ever nil? I don't think so... CHECK!!!
           next if ((@column_mapping[i] == false) || (@column_mapping[i].nil?))
@@ -148,7 +149,7 @@ class Jcsv
     #
     #---------------------------------------------------------------------------------------
 
-    def initialize(filereader, preferences, dimensions = nil, suppress_warnings)
+    def initialize(filereader, preferences, dimensions, suppress_warnings)
       @dimensions = dimensions
       @suppress_warnings = suppress_warnings
       super(filereader, preferences)
@@ -182,16 +183,19 @@ class Jcsv
     include_package "org.supercsv.cellprocessor.ift"
     include Processors
 
+    attr_reader :subtotals
+    
     # When dimensions are defined, then the composition of all dimensions is the 'key'
     # attr_reader :key
-    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
 
-    def initialize(filereader, preferences, dimensions = nil, suppress_warnings)
+    def initialize(filereader, preferences, dimensions, suppress_warnings, subtotals)
       @dimensions = dimensions
       @suppress_warnings = suppress_warnings
+      @subtotals_fields = subtotals
+      @subtotals = Critbit.new { |h, k, val| h[k] = 0.0 }
       super(filereader, preferences)
     end
 
@@ -210,19 +214,34 @@ class Jcsv
         filter_input(column_mapping, filters.values.to_java(CellProcessor))
       
     end
+
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    private
     
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------
 
     def filter_input(name_mapping, processors)
-      
+
       if (readRow())
         processed_columns = executeProcessors(processors)
         processed_columns[:key] = @key_array if dimensions
+        
+        # calculate subtotals if subtotals paramenter was given
+        @subtotals_fields.each_pair do |k, v|
+          @subtotals[k] += processed_columns[k]
+          if dimensions
+            @subtotals[@key_array.join(".") + ".#{k.to_s}"] += processed_columns[k]
+          end
+        end if @subtotals_fields
+        
         return processed_columns
       end
-      
+
     end
 
   end

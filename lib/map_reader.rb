@@ -110,7 +110,7 @@ class Jcsv
         raise MissingHeadersError.new("Reading file as map requires headers.") if
           (!@headers && !@custom_headers)
         @reader = CMR.new(FileReader.new(@filename), preferences, @dimensions,
-                          @suppress_warnings)
+                          @suppress_warnings, @subtotals)
       rescue java.io.IOException => e
         raise IOError.new(e.message)
       end
