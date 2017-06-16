@@ -182,6 +182,7 @@ class Jcsv
     attr_reader :column_mapping
     attr_reader :dimensions_names
     attr_reader :subtotals
+    attr_reader :grand_totals
     
     # last processed column
     attr_reader :processed_column   
@@ -334,7 +335,7 @@ class Jcsv
 =end
     
     #---------------------------------------------------------------------------------------
-    #
+    # @return [Dimensions] All dimensions for this reader
     #---------------------------------------------------------------------------------------
 
     def dimensions
@@ -342,13 +343,33 @@ class Jcsv
     end
 
     #---------------------------------------------------------------------------------------
-    #
+    # @return [Critbit] Critbit structure will all subtotals found during reading of the
+    # csv file
     #---------------------------------------------------------------------------------------
 
     def subtotals
       @reader.subtotals
     end
     
+    #---------------------------------------------------------------------------------------
+    # @return [Critbit] Critbit structure will all grand_totals found during reading of the
+    # csv file
+    #---------------------------------------------------------------------------------------
+
+    def grand_totals
+      @reader.grand_totals
+    end
+    
+    #---------------------------------------------------------------------------------------
+    #
+    #---------------------------------------------------------------------------------------
+
+    def match(str)
+
+      sub = str.split(".")
+      
+    end
+
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------

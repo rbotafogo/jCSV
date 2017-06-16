@@ -35,6 +35,29 @@ class CSVTest < Test::Unit::TestCase
 
     setup do
 
+      def match(str, subtotals)
+        sub = str.split(".")
+
+        regex_spec = ""
+        (0..(sub.length - 2)).each do |i|
+          regex_spec << sub[i] << ".*\\..*"
+        end
+        regex_spec << sub[-1]
+        regex = Regexp.new(regex_spec)
+        
+        # keys.find_all { |e| regex =~ e }
+
+        total = 0
+        subtotals.each_pair do |k, v|
+          if regex =~ k
+            # p "#{k} #{v}"
+            total += v
+          end
+        end
+
+        total
+      end
+
     end
 
     #-------------------------------------------------------------------------------------
@@ -55,14 +78,24 @@ class CSVTest < Test::Unit::TestCase
         # p row
       end
 
-      # pp reader.subtotals
+      p "matched visa"
+      p match(".visa.qu", reader.subtotals)
+      puts ""
 
-      # 
-      reader.subtotals.each_pair("2011-11-14T16:") do |key, val|
-        p "#{key}: #{val}"
-      end
+      p "matched tip"
+      p match("T16..tip", reader.subtotals)
+      puts ""
+      
+      # prety print all subtotals
+      pp reader.subtotals
+      # pp reader.grand_totals
 
-      p reader.subtotals["2011-11-14T16:53:41Z.tab.quantity"]
+      # Retrieve subtotals by prefix
+      # reader.subtotals.each_pair("2011-11-14T16:") do |key, val|
+        # p "#{key}: #{val}"
+      # end
+
+      # p reader.subtotals["2011-11-14T16:53:41Z.tab.quantity"]
       
     end
 

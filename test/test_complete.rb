@@ -35,3 +35,5 @@ require_relative 'test_filters'
 require_relative 'test_list_dimensions'
 require_relative 'test_customer_nhlist'
 require_relative 'test_mdarray'
+require_relative 'test_subtotals'
+

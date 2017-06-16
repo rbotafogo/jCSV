@@ -184,6 +184,7 @@ class Jcsv
     include Processors
 
     attr_reader :subtotals
+    attr_reader :grand_totals
     
     # When dimensions are defined, then the composition of all dimensions is the 'key'
     # attr_reader :key
@@ -196,6 +197,7 @@ class Jcsv
       @suppress_warnings = suppress_warnings
       @subtotals_fields = subtotals
       @subtotals = Critbit.new { |h, k, val| h[k] = 0.0 }
+      @grand_totals = Critbit.new { |h, k, val| h[k] = 0.0 }
       super(filereader, preferences)
     end
 
@@ -233,7 +235,7 @@ class Jcsv
         
         # calculate subtotals if subtotals paramenter was given
         @subtotals_fields.each_pair do |k, v|
-          @subtotals[k] += processed_columns[k]
+          @grand_totals[k] += processed_columns[k]
           if dimensions
             @subtotals[@key_array.join(".") + ".#{k.to_s}"] += processed_columns[k]
           end
