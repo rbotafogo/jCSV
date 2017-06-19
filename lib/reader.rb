@@ -365,11 +365,30 @@ class Jcsv
     #---------------------------------------------------------------------------------------
 
     def match(str)
-
       sub = str.split(".")
       
+      regex_spec = ""
+      (0..(sub.length - 2)).each do |i|
+        regex_spec << sub[i] << ".*\\..*"
+      end
+      regex_spec << sub[-1]
+      regex = Regexp.new(regex_spec)
+      
+      @reader.subtotals.keys.find_all { |e| regex =~ e }
+      
+=begin      
+      total = 0
+      subtotals.each_pair do |k, v|
+        if regex =~ k
+          # p "#{k} #{v}"
+          total += v
+        end
+      end
+      
+      total
+=end
     end
-
+    
     #---------------------------------------------------------------------------------------
     #
     #---------------------------------------------------------------------------------------

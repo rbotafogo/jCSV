@@ -64,6 +64,85 @@ class CSVTest < Test::Unit::TestCase
     #
     #-------------------------------------------------------------------------------------
 
+    should "read csv file and find subtotals" do
+
+      reader = Jcsv.reader("../data/subtotal.csv", format: :map,
+                           subtotals: {:quantity => :sum, :tip => :sum})
+
+      reader.filters = {:quantity => Jcsv.int, :tip => Jcsv.float, :date => Jcsv.date}
+      
+      reader.read {}
+
+      # Subtotal´s keys are converted to Strings so that one can do subtotal search by
+      # substrings, as we will see in another example
+      assert_equal(21.0, reader.grand_totals["quantity"])
+      assert_equal(500, reader.grand_totals["tip"])
+      
+    end
+
+    #-------------------------------------------------------------------------------------
+    # Subtotal´s keys are converted to Strings so that one can do subtotal search by
+    # substrings, as we will see in another example
+    #-------------------------------------------------------------------------------------
+
+    should "read csv file and find subtotals with dimensions" do
+
+      # Note that the dimensions used and their order is critical to the results
+      # obtained.  Let´s start with only one dimension: :vendor
+      reader = Jcsv.reader("../data/sales.csv", format: :map,
+                           dimensions: [:vendedor],
+                           subtotals: {:faturamento => :sum},
+                           :suppress_warnings => true)
+
+      reader.filters = {:mes => Jcsv.date, :faturamento => Jcsv.float(Jcsv::Locale::BRAZIL)}
+      
+      reader.read {}
+      
+      assert_equal(11_200, reader.grand_totals["faturamento"])
+      assert_equal(2_700, reader.subtotals["Célia.faturamento"])
+      assert_equal(2_060, reader.subtotals["Francisco.faturamento"])
+      assert_equal(1_120, reader.subtotals["José.faturamento"])
+      assert_equal(1_500, reader.subtotals["Marcos.faturamento"])
+      assert_equal(1_780, reader.subtotals["Maria.faturamento"])
+
+      # Let´s read again the same file with two dimensions now, :vendedor and :mês.  Note
+      # that although the data has :mês before :vendedor, we can swap the dimensions
+      # order.
+      reader = Jcsv.reader("../data/sales.csv", format: :map,
+                           dimensions: [:vendedor, :mês],
+                           subtotals: {:faturamento => :sum},
+                           :suppress_warnings => true)
+
+      reader.filters = {:mes => Jcsv.date, :faturamento => Jcsv.float(Jcsv::Locale::BRAZIL)}
+      
+      reader.read {}
+
+      # note that now we have the subtotals first by the name of the seler and then by
+      # month
+      assert_equal(550, reader.subtotals["Célia.jan-15.faturamento"])
+      assert_equal(430, reader.subtotals["Francisco.jan-15.faturamento"])
+      
+      # Let´s read again the same file with dimensions, :região, :vendedor.  Note
+      # that although the data has :mês before :vendedor, we can swap the dimensions
+      # order.
+      reader = Jcsv.reader("../data/sales.csv", format: :map,
+                           dimensions: [:região, :vendedor],
+                           subtotals: {:faturamento => :sum},
+                           :suppress_warnings => true)
+
+      reader.filters = {:mes => Jcsv.date, :faturamento => Jcsv.float(Jcsv::Locale::BRAZIL)}
+      
+      reader.read {}
+
+      pp reader.subtotals
+
+    end
+    
+=begin    
+    #-------------------------------------------------------------------------------------
+    #
+    #-------------------------------------------------------------------------------------
+
     should "generate subtotals for dimensions" do
       
       #subtotals: :count, :sum, :mean, :max, :min, :formula
@@ -98,7 +177,7 @@ class CSVTest < Test::Unit::TestCase
       # p reader.subtotals["2011-11-14T16:53:41Z.tab.quantity"]
       
     end
-
+=end
   end
   
 end

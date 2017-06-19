@@ -241,7 +241,8 @@ class Jcsv
           end
         end if @subtotals_fields
         
-        return processed_columns
+        processed_columns
+        
       end
 
     end
