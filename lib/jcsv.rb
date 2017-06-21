@@ -22,6 +22,7 @@
 ##########################################################################################
 
 require_relative '../config'
+require_relative 'exceptions.rb'
 require_relative 'filters'
 require_relative 'reader'
 

@@ -153,40 +153,40 @@ class Jcsv
 
     def read_chunk
 
-      if (@dimensions)
-        if (@chunk_size == 0)
-          row = @reader.read(@column_mapping, @filters)
-          return (row.nil?)? nil : { row.delete(:key).join(".") => row }
-        end
-
-        rows = {}
-        (1..@chunk_size).each do |i|
-          if ((row = @reader.read(@column_mapping, @filters)).nil?)
-            return (rows.size == 0)? nil : rows
-          else
-            if (@deep_map)
-              key = row.delete(:key)
-              key.reduce(rows) { |h,m| h[m] ||= {} }
-              last = key.pop
-              if (key.inject(rows, :fetch)[last] != {})
-                # p "overriding value for key: #{chunk[:key]} with #{chunk}"
-                raise DuplicateKeyError.new("Key #{row[:key]} not unique for this dataset. #{row}")
-              end
-              key.inject(rows, :fetch)[last] = row
-            else # not a deep map
-              key = row.delete(:key).join(".")
-              raise DuplicateKeyError.new("Key #{key} not unique for this dataset. #{row}") if
-                rows.has_key?(key)
-              rows.merge!({key => row})
+      return super if !@dimensions
+      
+      if (@chunk_size == 0)
+        row = @reader.read(@column_mapping, @filters)
+        return (row.nil?)? nil : { row.delete(:key).join(".") => row }
+      end
+      
+      rows = {}
+      (1..@chunk_size).each do |i|
+        if ((row = @reader.read(@column_mapping, @filters)).nil?)
+          return (rows.size == 0)? nil : rows
+        else
+          if (@deep_map)
+            key = row.delete(:key)
+            key.reduce(rows) { |h,m| h[m] ||= {} }
+            last = key.pop
+            if ((prev_key_val = key.inject(rows, :fetch)[last]) != {})
+              raise DuplicateKeyError.new(row[:key], row, prev_key_val)
             end
+            key.inject(rows, :fetch)[last] = row
+          else # not a deep map
+            key = row.delete(:key).join(".")
+            if (prev_key_val = rows.fetch(key, false))
+              raise DuplicateKeyError.new(key, row, prev_key_val)
+            end
+            rows.merge!({key => row})
           end
         end
-        return rows
-      else # no dimensions
-        super
       end
-    end
       
+      rows
+
+    end
+          
   end
-    
+  
 end

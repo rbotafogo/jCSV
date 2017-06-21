@@ -32,30 +32,6 @@ class Jcsv
   #
   #========================================================================================
 
-  class Error < RuntimeError
-
-  end
-  
-  class FilterError < Jcsv::Error
-
-  end
-
-  class ConstraintViolation < Jcsv::Error
-
-  end
-
-  class MissingHeadersError < Jcsv::Error
-
-  end
-
-  class DuplicateKeyError < Jcsv::Error
-
-  end
-
-  #========================================================================================
-  #
-  #========================================================================================
-
   module NextFilter
 
     # This object's next filter
